@@ -1,5 +1,100 @@
-import { View } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { router } from 'expo-router';
+import { useAuthStore } from '@/store/auth.store';
+import { authService } from '@/services/auth.service';
 
 export default function LoginScreen() {
-    return <View />;
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { setTokens } = useAuthStore();
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await authService.login({ email, password });
+            await setTokens(response.accessToken, response.refreshToken);
+            router.replace('/(app)/(tabs)/expenses');
+        } catch {
+            Alert.alert('Error', 'Invalid email or password');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Sign In</Text>
+            <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+            />
+            <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+                <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+                <Text style={styles.link}>Don't have an account? Register</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
+                <Text style={styles.link}>Forgot password?</Text>
+            </TouchableOpacity>
+        </View>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 24,
+        backgroundColor: '#fff',
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        marginBottom: 32,
+        textAlign: 'center',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 16,
+        fontSize: 16,
+    },
+    button: {
+        backgroundColor: '#0a7ea4',
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    link: {
+        color: '#0a7ea4',
+        textAlign: 'center',
+        marginTop: 8,
+        fontSize: 14,
+    },
+});
