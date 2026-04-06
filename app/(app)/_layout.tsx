@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 export default function AppLayout() {
     const { isAuthenticated } = useAuthStore();
+    useSessionTimeout();
 
     useEffect(() => {
         if (!isAuthenticated) {
