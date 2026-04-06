@@ -8,6 +8,7 @@ export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { setTokens } = useAuthStore();
 
     const handleLogin = async () => {
@@ -38,13 +39,18 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
             />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+            <View style={styles.passwordContainer}>
+                <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                    <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
                 <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
             </TouchableOpacity>
@@ -78,6 +84,25 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 16,
         fontSize: 16,
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        marginBottom: 16,
+    },
+    passwordInput: {
+        flex: 1,
+        padding: 12,
+        fontSize: 16,
+    },
+    eyeButton: {
+        padding: 12,
+    },
+    eyeText: {
+        fontSize: 18,
     },
     button: {
         backgroundColor: '#0a7ea4',
