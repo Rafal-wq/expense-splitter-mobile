@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
+import { authService } from '@/services/auth.service';
 
 export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
+    const [token, setToken] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [repeatNewPassword, setRepeatNewPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+    const [step, setStep] = useState<'email' | 'confirm'>('email');
 
     const handleResetPassword = async () => {
         if (!email) {
@@ -13,13 +20,84 @@ export default function ForgotPasswordScreen() {
         }
         setLoading(true);
         try {
-            Alert.alert('Success', 'If an account exists for this email, you will receive a password reset link', [
-                { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-            ]);
+            await authService.resetPassword(email);
+            setStep('confirm');
+        } catch {
+            Alert.alert('Error', 'Failed to send reset email. Please try again');
         } finally {
             setLoading(false);
         }
     };
+
+    const handleConfirmReset = async () => {
+        if (!token || !newPassword || !repeatNewPassword) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+        if (newPassword !== repeatNewPassword) {
+            Alert.alert('Error', 'Passwords do not match');
+            return;
+        }
+        setLoading(true);
+        try {
+            await authService.confirmResetPassword(token, newPassword, repeatNewPassword);
+            Alert.alert('Success', 'Password reset successfully', [
+                { text: 'OK', onPress: () => router.replace('/(auth)/login') },
+            ]);
+        } catch {
+            Alert.alert('Error', 'Failed to reset password. Check your token and try again');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (step === 'confirm') {
+        return (
+            <ScrollView contentContainerStyle={styles.container}>
+                <Text style={styles.title}>Set New Password</Text>
+                <Text style={styles.description}>
+                    Enter the token from your email and set a new password.
+                </Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Reset token"
+                    value={token}
+                    onChangeText={setToken}
+                    autoCapitalize="none"
+                />
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="New password"
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+                        <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Repeat new password"
+                        value={repeatNewPassword}
+                        onChangeText={setRepeatNewPassword}
+                        secureTextEntry={!showRepeatPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowRepeatPassword(!showRepeatPassword)} style={styles.eyeButton}>
+                        <Text style={styles.eyeText}>{showRepeatPassword ? '🙈' : '👁️'}</Text>
+                    </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.button} onPress={handleConfirmReset} disabled={loading}>
+                    <Text style={styles.buttonText}>{loading ? 'Resetting...' : 'Reset Password'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setStep('email')}>
+                    <Text style={styles.link}>Back</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -36,7 +114,7 @@ export default function ForgotPasswordScreen() {
                 keyboardType="email-address"
             />
             <TouchableOpacity style={styles.button} onPress={handleResetPassword} disabled={loading}>
-                <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Send Reset Link'}</Text>
+                <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Send Reset Email'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
                 <Text style={styles.link}>Back to Sign In</Text>
@@ -47,7 +125,7 @@ export default function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: 'center',
         padding: 24,
         backgroundColor: '#fff',
@@ -71,6 +149,25 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 16,
         fontSize: 16,
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        marginBottom: 16,
+    },
+    passwordInput: {
+        flex: 1,
+        padding: 12,
+        fontSize: 16,
+    },
+    eyeButton: {
+        padding: 12,
+    },
+    eyeText: {
+        fontSize: 18,
     },
     button: {
         backgroundColor: '#0a7ea4',
