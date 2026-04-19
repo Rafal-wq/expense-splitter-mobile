@@ -3,13 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
+import { profileService } from '@/services/profile.service';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const { setTokens } = useAuthStore();
+    const { setTokens, setUser } = useAuthStore();
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -20,6 +21,8 @@ export default function LoginScreen() {
         try {
             const response = await authService.login({ email, password });
             await setTokens(response.accessToken, response.refreshToken);
+            const profile = await profileService.getMe();
+            setUser(profile);
             router.replace('/(app)/(tabs)/expenses');
         } catch {
             Alert.alert('Error', 'Invalid email or password');

@@ -10,15 +10,19 @@ import {
     RefreshControl,
 } from 'react-native';
 import { friendsService } from '@/services/friends.service';
-import { FriendshipResponse } from '@/types';
+import { usersService } from '@/services/users.service';
+import { FriendshipResponse, SimpleUserResponse } from '@/types';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function FriendsScreen() {
     const [friends, setFriends] = useState<FriendshipResponse[]>([]);
     const [pendingReceived, setPendingReceived] = useState<FriendshipResponse[]>([]);
-    const [pendingSent, setPendingSent] = useState<FriendshipResponse[]>([]);
-    const [recipientId, setRecipientId] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SimpleUserResponse[]>([]);
+    const [searching, setSearching] = useState(false);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const { user } = useAuthStore();
 
     const loadData = useCallback(async () => {
         try {
@@ -27,11 +31,11 @@ export default function FriendsScreen() {
                 friendsService.getFriendships('PENDING'),
             ]);
             setFriends(accepted);
-            setPendingReceived(pending);
-        } catch (error: any) {
-            Alert.alert('Error', error?.response?.data?.message || error?.message || 'Unknown error');
+            setPendingReceived(pending.filter((f) => f.recipient.id === user?.id));
+        } catch {
+            Alert.alert('Error', 'Failed to load friends');
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         setLoading(true);
@@ -44,15 +48,29 @@ export default function FriendsScreen() {
         setRefreshing(false);
     }, [loadData]);
 
-    const handleSendRequest = async () => {
-        if (!recipientId.trim()) {
-            Alert.alert('Error', 'Please enter a user ID');
+    const handleSearch = async (query: string) => {
+        setSearchQuery(query);
+        if (query.trim().length < 2) {
+            setSearchResults([]);
             return;
         }
+        setSearching(true);
         try {
-            await friendsService.sendFriendRequest(recipientId.trim());
+            const results = await usersService.searchUsers(query);
+            setSearchResults(results);
+        } catch {
+            setSearchResults([]);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const handleSendRequest = async (recipientId: string) => {
+        try {
+            await friendsService.sendFriendRequest(recipientId);
             Alert.alert('Success', 'Friend request sent');
-            setRecipientId('');
+            setSearchQuery('');
+            setSearchResults([]);
             await loadData();
         } catch {
             Alert.alert('Error', 'Failed to send friend request');
@@ -95,11 +113,21 @@ export default function FriendsScreen() {
         ]);
     };
 
+    const renderSearchResult = ({ item }: { item: SimpleUserResponse }) => (
+        <TouchableOpacity style={styles.searchResult} onPress={() => handleSendRequest(item.id)}>
+            <View style={styles.itemInfo}>
+                <Text style={styles.itemName}>{item.firstName} {item.lastName}</Text>
+                <Text style={styles.itemSubtitle}>{item.email}</Text>
+            </View>
+            <Text style={styles.addText}>+ Add</Text>
+        </TouchableOpacity>
+    );
+
     const renderFriend = ({ item }: { item: FriendshipResponse }) => (
         <View style={styles.item}>
             <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>
-                    {item.requester.email}
+                    {item.recipient.email}
                 </Text>
             </View>
             <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
@@ -127,22 +155,30 @@ export default function FriendsScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.sendRequest}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter user ID to add friend"
-                    value={recipientId}
-                    onChangeText={setRecipientId}
-                    autoCapitalize="none"
-                />
-                <TouchableOpacity style={styles.sendButton} onPress={handleSendRequest}>
-                    <Text style={styles.sendButtonText}>Add</Text>
-                </TouchableOpacity>
-            </View>
+            <TextInput
+                style={styles.searchInput}
+                placeholder="Search users by name or email..."
+                value={searchQuery}
+                onChangeText={handleSearch}
+                autoCapitalize="none"
+            />
+
+            {searchResults.length > 0 && (
+                <View style={styles.searchResultsContainer}>
+                    <FlatList
+                        data={searchResults}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderSearchResult}
+                        scrollEnabled={false}
+                    />
+                </View>
+            )}
+
+            {searching && <Text style={styles.loadingText}>Searching...</Text>}
 
             {pendingReceived.length > 0 && (
                 <>
-                    <Text style={styles.sectionTitle}>Friend Requests</Text>
+                    <Text style={styles.sectionTitle}>Friend Requests ({pendingReceived.length})</Text>
                     <FlatList
                         data={pendingReceived}
                         keyExtractor={(item) => item.id}
@@ -174,28 +210,31 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 16,
     },
-    sendRequest: {
-        flexDirection: 'row',
-        marginBottom: 16,
-        gap: 8,
-    },
-    input: {
-        flex: 1,
+    searchInput: {
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
+        marginBottom: 8,
     },
-    sendButton: {
-        backgroundColor: '#0a7ea4',
+    searchResultsContainer: {
+        borderWidth: 1,
+        borderColor: '#ddd',
         borderRadius: 8,
-        padding: 12,
-        justifyContent: 'center',
+        marginBottom: 16,
     },
-    sendButtonText: {
-        color: '#fff',
+    searchResult: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    addText: {
+        color: '#0a7ea4',
         fontWeight: 'bold',
+        fontSize: 14,
     },
     sectionTitle: {
         fontSize: 18,
@@ -261,7 +300,7 @@ const styles = StyleSheet.create({
     loadingText: {
         textAlign: 'center',
         color: '#687076',
-        marginTop: 16,
+        marginTop: 8,
     },
     emptyText: {
         textAlign: 'center',

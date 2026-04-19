@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { UserResponse } from '@/types';
+import { DetailedUserResponse } from '@/types';
 
 interface AuthState {
-    user: UserResponse | null;
+    user: DetailedUserResponse | null;
     accessToken: string | null;
     refreshToken: string | null;
     isAuthenticated: boolean;
     setTokens: (accessToken: string, refreshToken: string) => Promise<void>;
-    setUser: (user: UserResponse) => void;
+    setUser: (user: DetailedUserResponse) => void;
     logout: () => Promise<void>;
     loadFromStorage: () => Promise<void>;
 }

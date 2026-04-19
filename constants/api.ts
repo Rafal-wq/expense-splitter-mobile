@@ -25,4 +25,10 @@ export const API_ENDPOINTS = {
         DELETE: (id: string) => `/expenses/${id}`,
         PARTICIPANTS: (id: string) => `/expenses/${id}/participants`,
     },
+    USERS: {
+        SEARCH: '/users',
+    },
+    PROFILE: {
+        ME: '/profile',
+    },
 } as const;
