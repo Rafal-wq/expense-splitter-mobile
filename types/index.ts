@@ -1,6 +1,8 @@
 export type Role = 'USER' | 'ADMIN';
 export type FriendshipStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 export type AuthProvider = 'GOOGLE' | 'FACEBOOK';
+export type ExpenseRole = 'PAYER' | 'PARTICIPANT';
+export type SplitType = 'EQUAL';
 
 export interface LoginRequest {
     email: string;
@@ -75,19 +77,18 @@ export interface FriendshipResponse {
     status: FriendshipStatus;
     createdAt: string;
     updatedAt: string;
-    deletedAt: string | null; // Instant
+    deletedAt: string | null;
 }
 
 export interface ExpenseParticipantRequest {
-    userId: number;
-    value: number;
+    userId: string;
 }
 
 export interface CreateExpenseRequest {
     title: string;
     description?: string;
     amount: number;
-    participantIds?: ExpenseParticipantRequest[];
+    participants?: ExpenseParticipantRequest[];
     expenseDate: string;
 }
 
@@ -97,28 +98,29 @@ export interface UpdateExpenseRequest {
     amount?: number;
 }
 
-export interface ExpenseParticipantResponse {
+export interface ExpenseShare {
     user: UserResponse;
-    amountOwed: number;
+    amount: number;
 }
 
 export interface ExpenseResponse {
-    id: string;
+    id: string; // UUID
     title: string;
+    role: ExpenseRole;
     amountTotal: number;
-    myBalance: number;
-    expenseDate: string;
+    expenseDate: string; // Instant
 }
 
 export interface DetailedExpenseResponse {
-    id: string;
+    id: string; // UUID
     title: string;
     description: string | null;
+    role: ExpenseRole;
+    payer: UserResponse;
     amountTotal: number;
-    myBalance: number;
-    participants: ExpenseParticipantResponse[];
-    expenseDate: string;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
+    splitType: SplitType;
+    shares: ExpenseShare[];
+    expenseDate: string; // Instant
+    createdAt: string; // Instant
+    updatedAt: string; // Instant
 }
