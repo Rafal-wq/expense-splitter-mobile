@@ -49,60 +49,66 @@ types/
 ```
 
 
-## Environment Variables
+## Zmienne środowiskowe
 
-| Variable | Description |
+| Zmienna | Opis |
 |---|---|
-| EXPO_PUBLIC_API_URL | Backend API base URL |
+| EXPO_PUBLIC_API_URL | Adres URL backendu |
 
-Copy `.env.example` to `.env` and fill in the values before running the app.
+Skopiuj `.env.example` do `.env` i uzupełnij wartości przed uruchomieniem.
 
 ## Backend
 
-The app connects to the Expense Splitter REST API.
-API documentation: https://sgorski00.github.io/expense-splitter-api/
+Aplikacja łączy się z Expense Splitter REST API.
+Dokumentacja API: https://sgorski00.github.io/expense-splitter-api/
 
-To run the backend locally using Docker:
+Uruchomienie backendu lokalnie przez Docker:
+
 ```bash
 cd expense-splitter-api
 cp .env.example .env
-docker-compose up --build -d
+docker-compose --profile dev up -d
 ```
 
-## Authentication
+## Uwierzytelnianie
 
-- JWT-based authentication with access token and refresh token
-- Tokens stored securely using Expo Secure Store
-- Access token automatically attached to every API request
-- Automatic token refresh on 401 response
-- Session expires after 15 minutes of inactivity
-- Manual logout available from the tab bar
+- Uwierzytelnianie oparte na JWT z access token i refresh token
+- Tokeny przechowywane bezpiecznie przez Expo Secure Store
+- Access token automatycznie dołączany do każdego żądania API
+- Automatyczne odświeżanie tokenu przy błędzie 401
+- Sesja wygasa po 15 minutach nieaktywności
+- Ręczne wylogowanie dostępne z paska zakładek
 
-## Completed Features
+## Lista funkcjonalności
 
-### Etap 1 — Authentication
-- User registration with strong password validation
-- User login with JWT token storage
-- Password visibility toggle on all password fields
-- Automatic redirect based on auth state
-- Session timeout after 15 minutes of inactivity
-- Manual logout
+### Etap 1 — Uwierzytelnianie
+- [x] Rejestracja użytkownika z walidacją silnego hasła
+- [x] Logowanie z przechowywaniem tokenów JWT
+- [x] Podgląd wpisanego hasła (przycisk oczka)
+- [x] Reset hasła przez email
+- [x] Automatyczne przekierowanie na podstawie stanu auth
+- [x] Wygasanie sesji po 15 minutach nieaktywności
+- [x] Ręczne wylogowanie
+- [ ] Logowanie OAuth2 Google
 
-## Pending Features
+### Etap 2 — Znajomi
+- [x] Lista znajomych
+- [x] Wyszukiwanie użytkowników po imieniu lub emailu
+- [x] Wysyłanie zaproszenia do znajomych
+- [x] Akceptowanie zaproszenia do znajomych
+- [x] Odrzucanie zaproszenia do znajomych
+- [x] Usuwanie znajomego
+- [ ] Powiadomienie push o nowym zaproszeniu
 
-### Etap 2 — Friends
-- List friends
-- Send friend request
-- Accept / reject friend request
-- Delete friend
-- Push notification on new friend request
+### Etap 3 — Wydatki
+- [ ] Lista wydatków
+- [ ] Tworzenie wydatku
+- [ ] Dodawanie uczestników do wydatku
+- [ ] Usuwanie uczestników z wydatku
+- [ ] Szczegóły wydatku
+- [ ] Oznaczanie części jako spłaconej
+- [ ] Zamykanie wydatku
+- [ ] Powiadomienie push o nowym wydatku
 
-### Etap 3 — Expenses
-- Create expense
-- Add / remove participants
-- View expense details
-- Mark share as paid
-- Close expense
-- Push notification on new expense
-
-### Etap 4 — OAuth2 Google Login
+### Etap 4 — OAuth2
+- [ ] Logowanie przez Google

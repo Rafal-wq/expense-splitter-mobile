@@ -1,50 +1,100 @@
-# Welcome to your Expo app 👋
+# Expense Splitter Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobilna aplikacja do zarządzania wspólnymi wydatkami w grupie. Umożliwia dzielenie kosztów, śledzenie płatności oraz rozliczanie się ze znajomymi.
 
-## Get started
+Aplikacja jest częścią większego projektu składającego się z:
+- **expense-splitter-api** — backend REST API (Spring Boot)
+- **expense-splitter-mobile** — aplikacja mobilna (React Native / Expo)
 
-1. Install dependencies
+## Wymagania
 
-   ```bash
-   npm install
-   ```
+- Node.js 20+
+- Docker i Docker Compose
+- Expo Go (na urządzeniu mobilnym z Android)
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Uruchomienie backendu
 
 ```bash
-npm run reset-project
+git clone https://github.com/sgorski00/expense-splitter-api.git
+cd expense-splitter-api
+cp .env.example .env
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Uzupełnij plik `.env` wymaganymi wartościami, następnie uruchom:
 
-## Learn more
+```bash
+docker-compose --profile dev up -d
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Backend będzie dostępny pod adresem `http://localhost:8080/api`.
+Dokumentacja API: `http://localhost:8080/api/swagger-ui/index.html`
+Skrzynka mailowa (mailhog): `http://localhost:8025`
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Uruchomienie aplikacji mobilnej
 
-## Join the community
+```bash
+git clone https://github.com/Rafal-wq/expense-splitter-mobile.git
+cd expense-splitter-mobile
+npm install
+cp .env.example .env
+```
 
-Join our community of developers creating universal apps.
+Uzupełnij plik `.env`:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+EXPO_PUBLIC_API_URL=http://<IP_KOMPUTERA>:8080/api
+
+Gdzie `<IP_KOMPUTERA>` to adres IP Twojego komputera w sieci lokalnej.
+
+Następnie uruchom:
+
+```bash
+npx expo start
+```
+
+Zeskanuj kod QR aplikacją Expo Go na telefonie.
+
+## Zmienne środowiskowe
+
+### Backend (.env)
+
+| Zmienna | Opis | Wymagana |
+|---|---|---|
+| POSTGRES_PASSWORD | Hasło do bazy danych | tak |
+| JWT_SECRET_KEY | Klucz do podpisywania tokenów JWT (min. 32 znaki) | tak |
+| GOOGLE_CLIENT_ID | Google OAuth2 Client ID | tak |
+| GOOGLE_CLIENT_SECRET | Google OAuth2 Client Secret | tak |
+| FACEBOOK_CLIENT_ID | Facebook OAuth2 Client ID | tak |
+| FACEBOOK_CLIENT_SECRET | Facebook OAuth2 Client Secret | tak |
+| ES_FIRST_ADMIN_EMAIL | Email pierwszego administratora | tak |
+| ES_FIRST_ADMIN_PASSWORD | Hasło pierwszego administratora | tak |
+| SPRING_MAIL_HOST | Host serwera SMTP | tak |
+| SPRING_MAIL_PORT | Port serwera SMTP | tak |
+
+### Aplikacja mobilna (.env)
+
+| Zmienna | Opis | Wymagana |
+|---|---|---|
+| EXPO_PUBLIC_API_URL | Adres URL backendu | tak |
+
+## Technologie
+
+### Aplikacja mobilna
+- React Native z Expo SDK 54
+- TypeScript
+- Expo Router
+- Axios
+- Zustand
+- Expo Secure Store
+
+### Backend
+- Spring Boot 4
+- PostgreSQL
+- JWT + Refresh Token
+- OAuth2 (Google, Facebook)
+- Flyway
+- Docker
+
+## Autorzy
+
+- **Rafał** — aplikacja mobilna
+- **Sebastian Górski** — backend API
