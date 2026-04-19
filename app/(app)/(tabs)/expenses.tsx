@@ -11,6 +11,7 @@ import {
 import { router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { ExpenseResponse } from '@/types';
+import { useFocusEffect } from 'expo-router';
 
 export default function ExpensesScreen() {
     const [expenses, setExpenses] = useState<ExpenseResponse[]>([]);
@@ -26,10 +27,12 @@ export default function ExpensesScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        setLoading(true);
-        loadExpenses().finally(() => setLoading(false));
-    }, [loadExpenses]);
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true);
+            loadExpenses().finally(() => setLoading(false));
+        }, [loadExpenses])
+    );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
