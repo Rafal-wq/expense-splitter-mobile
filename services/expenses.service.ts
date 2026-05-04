@@ -38,8 +38,8 @@ export const expensesService = {
         return Array.isArray(response.data) ? response.data : (response.data?.content ?? []);
     },
 
-    createPayment: async (id: string, data: CreatePaymentRequest): Promise<PaymentResponse> => {
-        const response = await api.post<PaymentResponse>(API_ENDPOINTS.EXPENSES.PAYMENTS(id), data);
+    createPayment: async (data: CreatePaymentRequest): Promise<PaymentResponse> => {
+        const response = await api.post<PaymentResponse>(API_ENDPOINTS.PAYMENTS.CREATE, data);
         return response.data;
     },
 };

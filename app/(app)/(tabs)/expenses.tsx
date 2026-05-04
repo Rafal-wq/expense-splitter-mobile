@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,24 +8,71 @@ import {
     Alert,
     RefreshControl,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { ExpenseResponse } from '@/types';
-import { useFocusEffect } from 'expo-router';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function ExpensesScreen() {
     const [expenses, setExpenses] = useState<ExpenseResponse[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [settledMap, setSettledMap] = useState<Record<string, boolean>>({});
+    const { user } = useAuthStore();
+
+    const loadSettledStatus = useCallback(async (expenseList: ExpenseResponse[]) => {
+        const entries = await Promise.all(
+            expenseList.map(async (expense) => {
+                try {
+                    const [detailed, payments] = await Promise.all([
+                        expensesService.getExpense(expense.id),
+                        expensesService.getPayments(expense.id),
+                    ]);
+
+                    let settled: boolean;
+
+                    if (expense.role === 'PARTICIPANT') {
+                        const myShare = detailed.shares.find((s) => s.user.id === user?.id);
+                        if (!myShare) {
+                            settled = false;
+                        } else {
+                            const totalPaid = payments
+                                .filter((p) => p.payer.id === user?.id)
+                                .reduce((sum, p) => sum + p.amount, 0);
+                            settled = totalPaid >= myShare.amount;
+                        }
+                    } else {
+                        const nonPayerShares = detailed.shares.filter((s) => s.user.id !== user?.id);
+                        if (nonPayerShares.length === 0) {
+                            settled = false;
+                        } else {
+                            settled = nonPayerShares.every((share) => {
+                                const paid = payments
+                                    .filter((p) => p.payer.id === share.user.id)
+                                    .reduce((sum, p) => sum + p.amount, 0);
+                                return paid >= share.amount;
+                            });
+                        }
+                    }
+
+                    return [expense.id, settled] as const;
+                } catch {
+                    return [expense.id, false] as const;
+                }
+            })
+        );
+        setSettledMap(Object.fromEntries(entries));
+    }, [user?.id]);
 
     const loadExpenses = useCallback(async () => {
         try {
             const data = await expensesService.getExpenses();
             setExpenses(data);
+            loadSettledStatus(data);
         } catch {
-            Alert.alert('Error', 'Failed to load expenses');
+            Alert.alert('Błąd', 'Nie udało się załadować wydatków');
         }
-    }, []);
+    }, [loadSettledStatus]);
 
     useFocusEffect(
         useCallback(() => {
@@ -41,47 +88,58 @@ export default function ExpensesScreen() {
     }, [loadExpenses]);
 
     const handleDelete = async (id: string) => {
-        Alert.alert('Delete Expense', 'Are you sure you want to delete this expense?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert('Usuń wydatek', 'Czy na pewno chcesz usunąć ten wydatek?', [
+            { text: 'Anuluj', style: 'cancel' },
             {
-                text: 'Delete',
+                text: 'Usuń',
                 style: 'destructive',
                 onPress: async () => {
                     try {
                         await expensesService.deleteExpense(id);
                         await loadExpenses();
                     } catch {
-                        Alert.alert('Error', 'Failed to delete expense');
+                        Alert.alert('Błąd', 'Nie udało się usunąć wydatku');
                     }
                 },
             },
         ]);
     };
 
-    const renderExpense = ({ item }: { item: ExpenseResponse }) => (
-        <TouchableOpacity
-            style={styles.item}
-            onPress={() => router.push(`/(app)/expense/${item.id}`)}
-        >
-            <View style={styles.itemInfo}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemDate}>
-                    {new Date(item.expenseDate).toLocaleDateString('pl-PL')}
-                </Text>
-                <Text style={[styles.itemRole, item.role === 'PAYER' ? styles.rolePayer : styles.roleParticipant]}>
-                    {item.role === 'PAYER' ? 'Płacący' : 'Uczestnik'}
-                </Text>
-            </View>
-            <View style={styles.itemRight}>
-                <Text style={styles.itemAmount}>{item.amountTotal.toFixed(2)} zł</Text>
-                {item.role === 'PAYER' && (
-                    <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                        <Text style={styles.deleteText}>Usuń</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
+    const renderExpense = ({ item }: { item: ExpenseResponse }) => {
+        const isSettled = settledMap[item.id] ?? false;
+        return (
+            <TouchableOpacity
+                style={[styles.item, isSettled && styles.itemSettled]}
+                onPress={() => router.push(`/(app)/expense/${item.id}`)}
+            >
+                <View style={styles.itemInfo}>
+                    <Text style={[styles.itemTitle, isSettled && styles.textMuted]}>{item.title}</Text>
+                    <Text style={styles.itemDate}>
+                        {new Date(item.expenseDate).toLocaleDateString('pl-PL')}
+                    </Text>
+                    <Text style={[styles.itemRole, item.role === 'PAYER' ? styles.rolePayer : styles.roleParticipant]}>
+                        {item.role === 'PAYER' ? 'Płacący' : 'Uczestnik'}
+                    </Text>
+                </View>
+                <View style={styles.itemRight}>
+                    <Text style={[styles.itemAmount, isSettled && styles.textMuted]}>
+                        {item.amountTotal.toFixed(2)} zł
+                    </Text>
+                    {isSettled ? (
+                        <View style={styles.settledBadge}>
+                            <Text style={styles.settledText}>Rozliczony</Text>
+                        </View>
+                    ) : (
+                        item.role === 'PAYER' && (
+                            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
+                                <Text style={styles.deleteText}>Usuń</Text>
+                            </TouchableOpacity>
+                        )
+                    )}
+                </View>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -133,6 +191,11 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
         borderRadius: 8,
         marginBottom: 8,
+        backgroundColor: '#fff',
+    },
+    itemSettled: {
+        backgroundColor: '#f5f5f5',
+        borderColor: '#e0e0e0',
     },
     itemInfo: {
         flex: 1,
@@ -163,6 +226,21 @@ const styles = StyleSheet.create({
     itemAmount: {
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    textMuted: {
+        color: '#aaa',
+    },
+    settledBadge: {
+        marginTop: 6,
+        backgroundColor: '#e8f5e9',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+    },
+    settledText: {
+        color: '#2e7d32',
+        fontSize: 11,
+        fontWeight: '600',
     },
     deleteButton: {
         marginTop: 8,

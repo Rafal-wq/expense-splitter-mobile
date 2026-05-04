@@ -52,7 +52,7 @@ export default function ExpenseDetailsScreen() {
         ]);
     };
 
-    const handleMarkAsPaid = async (payeeId: string, amount: number) => {
+    const handleMarkAsPaid = async (amount: number) => {
         if (!id) return;
         Alert.alert('Potwierdź płatność', `Czy potwierdzasz otrzymanie ${amount.toFixed(2)} zł?`, [
             { text: 'Anuluj', style: 'cancel' },
@@ -60,10 +60,11 @@ export default function ExpenseDetailsScreen() {
                 text: 'Potwierdź',
                 onPress: async () => {
                     try {
-                        await expensesService.createPayment(id, { payeeId, amount });
+                        await expensesService.createPayment({ expenseId: id, amount });
                         await loadData();
-                    } catch {
-                        Alert.alert('Błąd', 'Nie udało się zarejestrować płatności');
+                    } catch (error: any) {
+                        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Nieznany błąd';
+                        Alert.alert('Błąd', msg);
                     }
                 },
             },
@@ -88,9 +89,11 @@ export default function ExpenseDetailsScreen() {
 
     const isPayer = expense.payer.id === user?.id;
     const myShare = expense.shares.find((s) => s.user.id === user?.id);
-    const myPayments = payments.filter((p) => p.payer.id === user?.id || p.payee.id === user?.id);
-    const totalPaid = myPayments
-        .filter((p) => p.status === 'COMPLETED' && p.payer.id === user?.id)
+    const myPayments = isPayer
+        ? payments
+        : payments.filter((p) => p.payer.id === user?.id);
+    const totalPaid = payments
+        .filter((p) => p.payer.id === user?.id)
         .reduce((sum, p) => sum + p.amount, 0);
     const isSettled = myShare ? totalPaid >= myShare.amount : true;
 
@@ -157,7 +160,7 @@ export default function ExpenseDetailsScreen() {
             {!isPayer && myShare && !isSettled && (
                 <TouchableOpacity
                     style={styles.payButton}
-                    onPress={() => handleMarkAsPaid(expense.payer.id, myShare.amount - totalPaid)}
+                    onPress={() => handleMarkAsPaid(myShare.amount - totalPaid)}
                 >
                     <Text style={styles.payButtonText}>
                         Zgłoś wpłatę ({(myShare.amount - totalPaid).toFixed(2)} zł)
@@ -178,19 +181,14 @@ export default function ExpenseDetailsScreen() {
                     <View key={payment.id} style={styles.paymentItem}>
                         <View style={styles.participantInfo}>
                             <Text style={styles.participantEmail}>
-                                {payment.payer.id === user?.id
-                                    ? `Do: ${payment.payee.email}`
-                                    : `Od: ${payment.payer.email}`}
+                                {isPayer
+                                    ? `Od: ${payment.payer.email}`
+                                    : `Do: ${expense.payer.email}`}
                             </Text>
                             <Text style={styles.participantAmount}>{payment.amount.toFixed(2)} zł</Text>
                         </View>
-                        <View style={[
-                            styles.statusBadge,
-                            payment.status === 'COMPLETED' ? styles.statusCompleted : styles.statusPending,
-                        ]}>
-                            <Text style={styles.statusText}>
-                                {payment.status === 'COMPLETED' ? 'Zapłacono' : 'Oczekuje'}
-                            </Text>
+                        <View style={[styles.statusBadge, styles.statusCompleted]}>
+                            <Text style={styles.statusText}>Zapłacono</Text>
                         </View>
                     </View>
                 ))

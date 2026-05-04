@@ -125,20 +125,16 @@ export interface DetailedExpenseResponse {
     updatedAt: string;
 }
 
-export type PaymentStatus = 'PENDING' | 'COMPLETED';
-
 export interface PaymentResponse {
     id: string;
     expense: ExpenseResponse;
     payer: UserResponse;
-    payee: UserResponse;
     amount: number;
-    status: PaymentStatus;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface CreatePaymentRequest {
-    payeeId: string;
+    expenseId: string;
     amount: number;
 }

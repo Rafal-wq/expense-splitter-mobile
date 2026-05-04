@@ -27,6 +27,11 @@ export const API_ENDPOINTS = {
         DELETE_PARTICIPANT: (id: string, participantId: string) => `/expenses/${id}/participants/${participantId}`,
         PAYMENTS: (id: string) => `/expenses/${id}/payments`,
     },
+    PAYMENTS: {
+        CREATE: '/payments',
+        DETAILS: (id: string) => `/payments/${id}`,
+        DELETE: (id: string) => `/payments/${id}`,
+    },
     USERS: {
         SEARCH: '/users',
     },
