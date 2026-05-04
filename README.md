@@ -9,10 +9,36 @@ Aplikacja jest częścią większego projektu składającego się z:
 ## Wymagania
 
 - Node.js 20+
-- Docker i Docker Compose
 - Expo Go (na urządzeniu mobilnym z Android)
 
-## Uruchomienie backendu
+## Uruchomienie aplikacji mobilnej
+
+Backend jest wdrożony i dostępny publicznie pod adresem `https://wydatkomat.tech/api`.
+
+```bash
+git clone https://github.com/Rafal-wq/expense-splitter-mobile.git
+cd expense-splitter-mobile
+npm install
+cp .env.example .env
+```
+
+Uzupełnij plik `.env`:
+
+```
+EXPO_PUBLIC_API_URL=https://wydatkomat.tech/api
+```
+
+Następnie uruchom:
+
+```bash
+npx expo start
+```
+
+Zeskanuj kod QR aplikacją Expo Go na telefonie.
+
+## Uruchomienie backendu lokalnie (opcjonalne)
+
+Jeśli chcesz uruchomić backend lokalnie zamiast korzystać z wdrożonego serwera, potrzebujesz dodatkowo Docker i Docker Compose.
 
 ```bash
 git clone https://github.com/sgorski00/expense-splitter-api.git
@@ -30,28 +56,11 @@ Backend będzie dostępny pod adresem `http://localhost:8080/api`.
 Dokumentacja API: `http://localhost:8080/api/swagger-ui/index.html`
 Skrzynka mailowa (mailhog): `http://localhost:8025`
 
-## Uruchomienie aplikacji mobilnej
+W tym przypadku zmień `EXPO_PUBLIC_API_URL` w `.env` aplikacji mobilnej na adres IP swojego komputera w sieci lokalnej:
 
-```bash
-git clone https://github.com/Rafal-wq/expense-splitter-mobile.git
-cd expense-splitter-mobile
-npm install
-cp .env.example .env
 ```
-
-Uzupełnij plik `.env`:
-
 EXPO_PUBLIC_API_URL=http://<IP_KOMPUTERA>:8080/api
-
-Gdzie `<IP_KOMPUTERA>` to adres IP Twojego komputera w sieci lokalnej.
-
-Następnie uruchom:
-
-```bash
-npx expo start
 ```
-
-Zeskanuj kod QR aplikacją Expo Go na telefonie.
 
 ## Zmienne środowiskowe
 
