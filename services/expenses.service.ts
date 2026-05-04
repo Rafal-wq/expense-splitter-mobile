@@ -34,8 +34,8 @@ export const expensesService = {
     },
 
     getPayments: async (id: string): Promise<PaymentResponse[]> => {
-        const response = await api.get<PaymentResponse[]>(API_ENDPOINTS.EXPENSES.PAYMENTS(id));
-        return response.data;
+        const response = await api.get(API_ENDPOINTS.EXPENSES.PAYMENTS(id));
+        return Array.isArray(response.data) ? response.data : (response.data?.content ?? []);
     },
 
     createPayment: async (id: string, data: CreatePaymentRequest): Promise<PaymentResponse> => {
