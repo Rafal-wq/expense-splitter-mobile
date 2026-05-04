@@ -89,7 +89,6 @@ docker-compose --profile dev up -d
 - [x] Automatyczne przekierowanie na podstawie stanu auth
 - [x] Wygasanie sesji po 15 minutach nieaktywności
 - [x] Ręczne wylogowanie
-- [ ] Logowanie OAuth2 Google
 
 ### Etap 2 — Znajomi
 - [x] Lista znajomych
@@ -101,13 +100,13 @@ docker-compose --profile dev up -d
 - [ ] Powiadomienie push o nowym zaproszeniu
 
 ### Etap 3 — Wydatki
-- [ ] Lista wydatków
-- [ ] Tworzenie wydatku
-- [ ] Dodawanie uczestników do wydatku
-- [ ] Usuwanie uczestników z wydatku
-- [ ] Szczegóły wydatku
-- [ ] Oznaczanie części jako spłaconej
-- [ ] Zamykanie wydatku
+- [x] Lista wydatków
+- [x] Tworzenie wydatku
+- [x] Dodawanie uczestników do wydatku
+- [x] Usuwanie uczestników z wydatku
+- [x] Szczegóły wydatku
+- [x] Oznaczanie części jako spłaconej
+- [x] Wizualny wskaźnik rozliczenia wydatku na liście
 - [ ] Powiadomienie push o nowym wydatku
 
 ### Etap 4 — OAuth2

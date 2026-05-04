@@ -12,6 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { ExpenseResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
+import { isExpenseSettled } from '@/utils/expenseSettled';
 
 export default function ExpensesScreen() {
     const [expenses, setExpenses] = useState<ExpenseResponse[]>([]);
@@ -29,31 +30,9 @@ export default function ExpensesScreen() {
                         expensesService.getPayments(expense.id),
                     ]);
 
-                    let settled: boolean;
-
-                    if (expense.role === 'PARTICIPANT') {
-                        const myShare = detailed.shares.find((s) => s.user.id === user?.id);
-                        if (!myShare) {
-                            settled = false;
-                        } else {
-                            const totalPaid = payments
-                                .filter((p) => p.payer.id === user?.id)
-                                .reduce((sum, p) => sum + p.amount, 0);
-                            settled = totalPaid >= myShare.amount;
-                        }
-                    } else {
-                        const nonPayerShares = detailed.shares.filter((s) => s.user.id !== user?.id);
-                        if (nonPayerShares.length === 0) {
-                            settled = false;
-                        } else {
-                            settled = nonPayerShares.every((share) => {
-                                const paid = payments
-                                    .filter((p) => p.payer.id === share.user.id)
-                                    .reduce((sum, p) => sum + p.amount, 0);
-                                return paid >= share.amount;
-                            });
-                        }
-                    }
+                    const settled = user?.id
+                        ? isExpenseSettled(detailed, payments, user.id, expense.role)
+                        : false;
 
                     return [expense.id, settled] as const;
                 } catch {
