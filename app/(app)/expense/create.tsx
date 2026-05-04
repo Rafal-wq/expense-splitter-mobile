@@ -44,15 +44,15 @@ export default function CreateExpenseScreen() {
 
     const handleCreate = async () => {
         if (!title.trim()) {
-            Alert.alert('Error', 'Please enter a title');
+            Alert.alert('Błąd', 'Podaj tytuł wydatku');
             return;
         }
         if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-            Alert.alert('Error', 'Please enter a valid amount');
+            Alert.alert('Błąd', 'Podaj poprawną kwotę');
             return;
         }
         if (!expenseDate) {
-            Alert.alert('Error', 'Please enter a date');
+            Alert.alert('Błąd', 'Podaj datę');
             return;
         }
         setLoading(true);
@@ -64,11 +64,11 @@ export default function CreateExpenseScreen() {
                 participants: participants.map((p) => ({ userId: p.id })),
                 expenseDate: new Date(expenseDate).toISOString(),
             });
-            Alert.alert('Success', 'Expense created successfully', [
+            Alert.alert('Sukces', 'Wydatek został utworzony', [
                 { text: 'OK', onPress: () => router.back() },
             ]);
         } catch {
-            Alert.alert('Error', 'Failed to create expense');
+            Alert.alert('Błąd', 'Nie udało się utworzyć wydatku');
         } finally {
             setLoading(false);
         }
@@ -76,38 +76,38 @@ export default function CreateExpenseScreen() {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>New Expense</Text>
+            <Text style={styles.title}>Nowy wydatek</Text>
 
             <TextInput
                 style={styles.input}
-                placeholder="Title"
+                placeholder="Tytuł"
                 value={title}
                 onChangeText={setTitle}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Description (optional)"
+                placeholder="Opis (opcjonalny)"
                 value={description}
                 onChangeText={setDescription}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Amount"
+                placeholder="Kwota"
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="decimal-pad"
             />
             <TextInput
                 style={styles.input}
-                placeholder="Date (YYYY-MM-DD)"
+                placeholder="Data (RRRR-MM-DD)"
                 value={expenseDate}
                 onChangeText={setExpenseDate}
             />
 
-            <Text style={styles.sectionTitle}>Participants</Text>
+            <Text style={styles.sectionTitle}>Uczestnicy</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Search users..."
+                placeholder="Szukaj użytkowników..."
                 value={searchQuery}
                 onChangeText={handleSearch}
                 autoCapitalize="none"
@@ -137,7 +137,7 @@ export default function CreateExpenseScreen() {
                                 <Text style={styles.participantEmail}>{item.email}</Text>
                             </View>
                             <TouchableOpacity onPress={() => handleRemoveParticipant(item.id)}>
-                                <Text style={styles.removeText}>Remove</Text>
+                                <Text style={styles.removeText}>Usuń</Text>
                             </TouchableOpacity>
                         </View>
                     ))}
@@ -145,10 +145,10 @@ export default function CreateExpenseScreen() {
             )}
 
             <TouchableOpacity style={styles.button} onPress={handleCreate} disabled={loading}>
-                <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Create Expense'}</Text>
+                <Text style={styles.buttonText}>{loading ? 'Tworzenie...' : 'Utwórz wydatek'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>Anuluj</Text>
             </TouchableOpacity>
         </ScrollView>
     );

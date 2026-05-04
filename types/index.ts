@@ -104,15 +104,15 @@ export interface ExpenseShare {
 }
 
 export interface ExpenseResponse {
-    id: string; // UUID
+    id: string;
     title: string;
     role: ExpenseRole;
     amountTotal: number;
-    expenseDate: string; // Instant
+    expenseDate: string;
 }
 
 export interface DetailedExpenseResponse {
-    id: string; // UUID
+    id: string;
     title: string;
     description: string | null;
     role: ExpenseRole;
@@ -120,7 +120,25 @@ export interface DetailedExpenseResponse {
     amountTotal: number;
     splitType: SplitType;
     shares: ExpenseShare[];
-    expenseDate: string; // Instant
-    createdAt: string; // Instant
-    updatedAt: string; // Instant
+    expenseDate: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type PaymentStatus = 'PENDING' | 'COMPLETED';
+
+export interface PaymentResponse {
+    id: string;
+    expense: ExpenseResponse;
+    payer: UserResponse;
+    payee: UserResponse;
+    amount: number;
+    status: PaymentStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreatePaymentRequest {
+    payeeId: string;
+    amount: number;
 }

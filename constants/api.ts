@@ -32,5 +32,7 @@ export const API_ENDPOINTS = {
     },
     PROFILE: {
         ME: '/profile',
+        UPDATE: '/profile',
+        CHANGE_PASSWORD: '/profile/password',
     },
 } as const;

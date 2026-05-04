@@ -8,10 +8,11 @@ import {
     Alert,
     TextInput,
     RefreshControl,
+    ScrollView,
 } from 'react-native';
 import { friendsService } from '@/services/friends.service';
 import { usersService } from '@/services/users.service';
-import { FriendshipResponse, SimpleUserResponse } from '@/types';
+import { FriendshipResponse, SimpleUserResponse, UserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function FriendsScreen() {
@@ -33,7 +34,7 @@ export default function FriendsScreen() {
             setFriends(accepted);
             setPendingReceived(pending.filter((f) => f.recipient.id === user?.id));
         } catch {
-            Alert.alert('Error', 'Failed to load friends');
+            Alert.alert('Błąd', 'Nie udało się załadować listy znajomych');
         }
     }, [user]);
 
@@ -68,12 +69,12 @@ export default function FriendsScreen() {
     const handleSendRequest = async (recipientId: string) => {
         try {
             await friendsService.sendFriendRequest(recipientId);
-            Alert.alert('Success', 'Friend request sent');
+            Alert.alert('Sukces', 'Zaproszenie do znajomych zostało wysłane');
             setSearchQuery('');
             setSearchResults([]);
             await loadData();
         } catch {
-            Alert.alert('Error', 'Failed to send friend request');
+            Alert.alert('Błąd', 'Nie udało się wysłać zaproszenia');
         }
     };
 
@@ -82,7 +83,7 @@ export default function FriendsScreen() {
             await friendsService.acceptFriendRequest(id);
             await loadData();
         } catch {
-            Alert.alert('Error', 'Failed to accept friend request');
+            Alert.alert('Błąd', 'Nie udało się zaakceptować zaproszenia');
         }
     };
 
@@ -91,26 +92,32 @@ export default function FriendsScreen() {
             await friendsService.rejectFriendRequest(id);
             await loadData();
         } catch {
-            Alert.alert('Error', 'Failed to reject friend request');
+            Alert.alert('Błąd', 'Nie udało się odrzucić zaproszenia');
         }
     };
 
     const handleDelete = async (id: string) => {
-        Alert.alert('Delete Friend', 'Are you sure you want to remove this friend?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert('Usuń znajomego', 'Czy na pewno chcesz usunąć tę osobę ze znajomych?', [
+            { text: 'Anuluj', style: 'cancel' },
             {
-                text: 'Delete',
+                text: 'Usuń',
                 style: 'destructive',
                 onPress: async () => {
                     try {
                         await friendsService.deleteFriendship(id);
                         await loadData();
                     } catch {
-                        Alert.alert('Error', 'Failed to delete friend');
+                        Alert.alert('Błąd', 'Nie udało się usunąć znajomego');
                     }
                 },
             },
         ]);
+    };
+
+    const getFriendUser = (friendship: FriendshipResponse): UserResponse => {
+        return friendship.requester.id === user?.id
+            ? friendship.recipient
+            : friendship.requester;
     };
 
     const renderSearchResult = ({ item }: { item: SimpleUserResponse }) => (
@@ -119,49 +126,55 @@ export default function FriendsScreen() {
                 <Text style={styles.itemName}>{item.firstName} {item.lastName}</Text>
                 <Text style={styles.itemSubtitle}>{item.email}</Text>
             </View>
-            <Text style={styles.addText}>+ Add</Text>
+            <Text style={styles.addText}>+ Dodaj</Text>
         </TouchableOpacity>
     );
 
-    const renderFriend = ({ item }: { item: FriendshipResponse }) => (
-        <View style={styles.item}>
-            <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>
-                    {item.recipient.email}
-                </Text>
+    const renderFriend = ({ item }: { item: FriendshipResponse }) => {
+        const friend = getFriendUser(item);
+        return (
+            <View style={styles.item}>
+                <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{friend.email}</Text>
+                </View>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
+                    <Text style={styles.deleteText}>Usuń</Text>
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                <Text style={styles.deleteText}>Remove</Text>
-            </TouchableOpacity>
-        </View>
-    );
+        );
+    };
 
     const renderPendingRequest = ({ item }: { item: FriendshipResponse }) => (
         <View style={styles.item}>
             <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>{item.requester.email}</Text>
-                <Text style={styles.itemSubtitle}>Wants to be your friend</Text>
+                <Text style={styles.itemSubtitle}>Chce zostać Twoim znajomym</Text>
             </View>
             <View style={styles.actionButtons}>
                 <TouchableOpacity onPress={() => handleAccept(item.id)} style={styles.acceptButton}>
-                    <Text style={styles.acceptText}>Accept</Text>
+                    <Text style={styles.acceptText}>Akceptuj</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleReject(item.id)} style={styles.rejectButton}>
-                    <Text style={styles.rejectText}>Reject</Text>
+                    <Text style={styles.rejectText}>Odrzuć</Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
             <TextInput
                 style={styles.searchInput}
-                placeholder="Search users by name or email..."
+                placeholder="Szukaj użytkowników po nazwie lub emailu..."
                 value={searchQuery}
                 onChangeText={handleSearch}
                 autoCapitalize="none"
             />
+
+            {searching && <Text style={styles.loadingText}>Szukam...</Text>}
 
             {searchResults.length > 0 && (
                 <View style={styles.searchResultsContainer}>
@@ -174,11 +187,9 @@ export default function FriendsScreen() {
                 </View>
             )}
 
-            {searching && <Text style={styles.loadingText}>Searching...</Text>}
-
             {pendingReceived.length > 0 && (
                 <>
-                    <Text style={styles.sectionTitle}>Friend Requests ({pendingReceived.length})</Text>
+                    <Text style={styles.sectionTitle}>Zaproszenia ({pendingReceived.length})</Text>
                     <FlatList
                         data={pendingReceived}
                         keyExtractor={(item) => item.id}
@@ -188,19 +199,19 @@ export default function FriendsScreen() {
                 </>
             )}
 
-            <Text style={styles.sectionTitle}>Friends ({friends.length})</Text>
+            <Text style={styles.sectionTitle}>Znajomi ({friends.length})</Text>
             {loading ? (
-                <Text style={styles.loadingText}>Loading...</Text>
+                <Text style={styles.loadingText}>Ładowanie...</Text>
             ) : (
                 <FlatList
                     data={friends}
                     keyExtractor={(item) => item.id}
                     renderItem={renderFriend}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    ListEmptyComponent={<Text style={styles.emptyText}>No friends yet</Text>}
+                    scrollEnabled={false}
+                    ListEmptyComponent={<Text style={styles.emptyText}>Brak znajomych</Text>}
                 />
             )}
-        </View>
+        </ScrollView>
     );
 }
 

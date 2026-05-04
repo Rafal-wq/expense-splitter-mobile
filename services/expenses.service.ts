@@ -1,6 +1,6 @@
 import api from './api';
 import { API_ENDPOINTS } from '@/constants/api';
-import { CreateExpenseRequest, DetailedExpenseResponse, ExpenseResponse, UpdateExpenseRequest } from '@/types';
+import { CreateExpenseRequest, CreatePaymentRequest, DetailedExpenseResponse, ExpenseResponse, PaymentResponse, UpdateExpenseRequest } from '@/types';
 
 export const expensesService = {
     getExpenses: async (role?: 'PAYER' | 'PARTICIPANT'): Promise<ExpenseResponse[]> => {
@@ -31,5 +31,15 @@ export const expensesService = {
 
     deleteParticipant: async (id: string, participantId: string): Promise<void> => {
         await api.delete(API_ENDPOINTS.EXPENSES.DELETE_PARTICIPANT(id, participantId));
+    },
+
+    getPayments: async (id: string): Promise<PaymentResponse[]> => {
+        const response = await api.get<PaymentResponse[]>(API_ENDPOINTS.EXPENSES.PAYMENTS(id));
+        return response.data;
+    },
+
+    createPayment: async (id: string, data: CreatePaymentRequest): Promise<PaymentResponse> => {
+        const response = await api.post<PaymentResponse>(API_ENDPOINTS.EXPENSES.PAYMENTS(id), data);
+        return response.data;
     },
 };
