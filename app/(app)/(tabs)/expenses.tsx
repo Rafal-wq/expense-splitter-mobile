@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     View,
     Text,
@@ -11,16 +11,20 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
+import { offlineQueueService, QueuedExpense } from '@/services/offlineQueue.service';
+import { useSyncStore } from '@/store/sync.store';
 import { ExpenseResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { isExpenseSettled } from '@/utils/expenseSettled';
 
 export default function ExpensesScreen() {
     const [expenses, setExpenses] = useState<ExpenseResponse[]>([]);
+    const [pendingQueue, setPendingQueue] = useState<QueuedExpense[]>([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [settledMap, setSettledMap] = useState<Record<string, boolean>>({});
     const { user } = useAuthStore();
+    const { syncVersion } = useSyncStore();
 
     const loadSettledStatus = useCallback(async (expenseList: ExpenseResponse[]) => {
         const entries = await Promise.all(
@@ -61,12 +65,25 @@ export default function ExpensesScreen() {
         }
     }, [loadSettledStatus]);
 
+    const loadQueue = useCallback(async () => {
+        const queue = await offlineQueueService.getQueue();
+        setPendingQueue(queue);
+    }, []);
+
     useFocusEffect(
         useCallback(() => {
             setLoading(true);
-            loadExpenses().finally(() => setLoading(false));
-        }, [loadExpenses])
+            Promise.all([loadExpenses(), loadQueue()]).finally(() => setLoading(false));
+        }, [loadExpenses, loadQueue])
     );
+
+    // Odśwież po powrocie internetu i zakończeniu synca
+    useEffect(() => {
+        if (syncVersion > 0) {
+            loadExpenses();
+            loadQueue();
+        }
+    }, [syncVersion, loadExpenses, loadQueue]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -128,6 +145,24 @@ export default function ExpensesScreen() {
         );
     };
 
+    const renderPendingItem = (item: QueuedExpense) => (
+        <View key={item.tempId} style={[styles.item, styles.itemPending]}>
+            <View style={styles.itemInfo}>
+                <Text style={styles.itemTitle}>{item.payload.title}</Text>
+                <Text style={styles.itemDate}>
+                    {new Date(item.timestamp).toLocaleDateString('pl-PL')}
+                </Text>
+                <Text style={[styles.itemRole, styles.rolePayer]}>Płacący</Text>
+            </View>
+            <View style={styles.itemRight}>
+                <Text style={styles.itemAmount}>{item.payload.amount.toFixed(2)} zł</Text>
+                <View style={styles.pendingBadge}>
+                    <Text style={styles.pendingText}>⏳ Oczekuje</Text>
+                </View>
+            </View>
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -136,6 +171,13 @@ export default function ExpensesScreen() {
             >
                 <Text style={styles.addButtonText}>+ Nowy wydatek</Text>
             </TouchableOpacity>
+
+            {pendingQueue.length > 0 && (
+                <View style={styles.pendingSection}>
+                    <Text style={styles.pendingSectionTitle}>Oczekuje na synchronizację</Text>
+                    {pendingQueue.map(renderPendingItem)}
+                </View>
+            )}
 
             {loading ? (
                 <Text style={styles.loadingText}>Ładowanie...</Text>
@@ -245,5 +287,30 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#687076',
         marginTop: 16,
+    },
+    pendingSection: {
+        marginBottom: 8,
+    },
+    pendingSectionTitle: {
+        fontSize: 13,
+        color: '#c0392b',
+        fontWeight: '600',
+        marginBottom: 6,
+    },
+    itemPending: {
+        borderColor: '#f0a500',
+        backgroundColor: '#fffbf0',
+    },
+    pendingBadge: {
+        marginTop: 6,
+        backgroundColor: '#fff3cd',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+    },
+    pendingText: {
+        color: '#856404',
+        fontSize: 11,
+        fontWeight: '600',
     },
 });

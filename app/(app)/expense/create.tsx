@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { usersService } from '@/services/users.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
+import { offlineQueueService } from '@/services/offlineQueue.service';
 import { FriendshipResponse, SimpleUserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -81,19 +82,25 @@ export default function CreateExpenseScreen() {
             return;
         }
         setLoading(true);
+        const payload = {
+            title: title.trim(),
+            description: description.trim() || undefined,
+            amount: parseFloat(amount),
+            participants: participants.map((p) => ({ userId: p.id })),
+            expenseDate: new Date(expenseDate).toISOString(),
+        };
         try {
-            await expensesService.createExpense({
-                title: title.trim(),
-                description: description.trim() || undefined,
-                amount: parseFloat(amount),
-                participants: participants.map((p) => ({ userId: p.id })),
-                expenseDate: new Date(expenseDate).toISOString(),
-            });
+            await expensesService.createExpense(payload);
             Alert.alert('Sukces', 'Wydatek został utworzony', [
                 { text: 'OK', onPress: () => router.back() },
             ]);
         } catch {
-            Alert.alert('Błąd', 'Nie udało się utworzyć wydatku');
+            await offlineQueueService.add(payload);
+            Alert.alert(
+                'Tryb offline',
+                'Wydatek został zapisany lokalnie i zostanie wysłany automatycznie gdy wróci połączenie z internetem.',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
         } finally {
             setLoading(false);
         }

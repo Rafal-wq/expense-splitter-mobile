@@ -8,6 +8,8 @@
 - Axios (HTTP client)
 - Zustand (global state management)
 - Expo Secure Store (secure token storage)
+- AsyncStorage (cache i kolejka offline)
+- NetInfo (wykrywanie stanu sieci)
 
 ## Project Structure
 ```
@@ -35,14 +37,21 @@ constants/
 └── theme.ts
 
 hooks/
-└── useSessionTimeout.ts
+├── useSessionTimeout.ts
+└── useNetworkStatus.ts
+
+components/
+└── OfflineBanner.tsx
 
 services/
 ├── api.ts
-└── auth.service.ts
+├── auth.service.ts
+├── cache.service.ts
+└── offlineQueue.service.ts
 
 store/
-└── auth.store.ts
+├── auth.store.ts
+└── sync.store.ts
 
 types/
 └── index.ts
@@ -109,5 +118,15 @@ docker-compose --profile dev up -d
 - [x] Wizualny wskaźnik rozliczenia wydatku na liście
 - [ ] Powiadomienie push o nowym wydatku
 
-### Etap 4 — OAuth2
+### Etap 4 — Tryb offline
+- [x] Wykrywanie stanu sieci (NetInfo)
+- [x] Baner informacyjny przy braku połączenia
+- [x] Cache danych przy logowaniu (wydatki, profil, znajomi)
+- [x] Przeglądanie wydatków, profilu i znajomych offline z cache
+- [x] Wyszukiwanie uczestników offline z cache znajomych
+- [x] Tworzenie wydatku offline — kolejka lokalna z auto-sync
+- [x] Automatyczna synchronizacja kolejki przy powrocie internetu
+- [x] Wizualny wskaźnik wydatków oczekujących na synchronizację
+
+### Etap 5 — OAuth2
 - [ ] Logowanie przez Google
