@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { showError, showSuccess } from '@/utils/toast';
 import { useLocalSearchParams, router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { cacheService } from '@/services/cache.service';
@@ -56,9 +57,10 @@ export default function ExpenseDetailsScreen() {
                 onPress: async () => {
                     try {
                         await expensesService.deleteParticipant(id, participantId);
+                        showSuccess('Uczestnik usunięty');
                         await loadData();
                     } catch (error: any) {
-                        Alert.alert('Błąd', error?.response?.data?.detail || error?.message || 'Nieznany błąd');
+                        showError(error?.response?.data?.detail || error?.message || 'Nie udało się usunąć uczestnika');
                     }
                 },
             },
@@ -74,10 +76,11 @@ export default function ExpenseDetailsScreen() {
                 onPress: async () => {
                     try {
                         await expensesService.createPayment({ expenseId: id, amount });
+                        showSuccess('Płatność zarejestrowana');
                         await loadData();
                     } catch (error: any) {
-                        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Nieznany błąd';
-                        Alert.alert('Błąd', msg);
+                        const msg = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Nie udało się zarejestrować płatności';
+                        showError(msg);
                     }
                 },
             },

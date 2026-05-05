@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { usersService } from '@/services/users.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { offlineQueueService } from '@/services/offlineQueue.service';
+import { showError, showSuccess, showInfo } from '@/utils/toast';
 import { FriendshipResponse, SimpleUserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -70,15 +71,15 @@ export default function CreateExpenseScreen() {
 
     const handleCreate = async () => {
         if (!title.trim()) {
-            Alert.alert('Błąd', 'Podaj tytuł wydatku');
+            showError('Podaj tytuł wydatku');
             return;
         }
         if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-            Alert.alert('Błąd', 'Podaj poprawną kwotę');
+            showError('Podaj poprawną kwotę');
             return;
         }
         if (!expenseDate) {
-            Alert.alert('Błąd', 'Podaj datę');
+            showError('Podaj datę');
             return;
         }
         setLoading(true);
@@ -91,16 +92,12 @@ export default function CreateExpenseScreen() {
         };
         try {
             await expensesService.createExpense(payload);
-            Alert.alert('Sukces', 'Wydatek został utworzony', [
-                { text: 'OK', onPress: () => router.back() },
-            ]);
+            showSuccess('Wydatek został utworzony');
+            router.back();
         } catch {
             await offlineQueueService.add(payload);
-            Alert.alert(
-                'Tryb offline',
-                'Wydatek został zapisany lokalnie i zostanie wysłany automatycznie gdy wróci połączenie z internetem.',
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            showInfo('Tryb offline', 'Wydatek zostanie wysłany gdy wróci internet');
+            router.back();
         } finally {
             setLoading(false);
         }

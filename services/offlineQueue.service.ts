@@ -16,6 +16,8 @@ export interface QueuedExpense {
     timestamp: string;
 }
 
+let isProcessing = false;
+
 export const offlineQueueService = {
     async getQueue(): Promise<QueuedExpense[]> {
         try {
@@ -47,20 +49,37 @@ export const offlineQueueService = {
     },
 
     async processQueue(): Promise<{ synced: number; failed: number }> {
+        if (isProcessing) return { synced: 0, failed: 0 };
+        isProcessing = true;
+
         const queue = await this.getQueue();
         let synced = 0;
         let failed = 0;
 
-        for (const op of queue) {
-            try {
-                await expensesService.createExpense(op.payload);
-                await this.remove(op.tempId);
-                synced++;
-            } catch {
-                failed++;
+        try {
+            for (const op of queue) {
+                try {
+                    await expensesService.createExpense(op.payload);
+                    await this.remove(op.tempId);
+                    synced++;
+                } catch (error: any) {
+                    if (error?.response) {
+                        // Błąd API (4xx/5xx) — nieprawidłowe dane, usuń z kolejki
+                        await this.remove(op.tempId);
+                    } else {
+                        // Błąd sieciowy — zostaw, spróbuj później
+                        failed++;
+                    }
+                }
             }
+        } finally {
+            isProcessing = false;
         }
 
         return { synced, failed };
+    },
+
+    async clearQueue(): Promise<void> {
+        await AsyncStorage.removeItem(QUEUE_KEY);
     },
 };

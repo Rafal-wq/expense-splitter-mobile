@@ -5,7 +5,6 @@ import {
     FlatList,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     TextInput,
     RefreshControl,
     ScrollView,
@@ -13,12 +12,15 @@ import {
 import { friendsService } from '@/services/friends.service';
 import { usersService } from '@/services/users.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
+import { showError, showSuccess } from '@/utils/toast';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { FriendshipResponse, SimpleUserResponse, UserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function FriendsScreen() {
     const [friends, setFriends] = useState<FriendshipResponse[]>([]);
     const [pendingReceived, setPendingReceived] = useState<FriendshipResponse[]>([]);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SimpleUserResponse[]>([]);
     const [searching, setSearching] = useState(false);
@@ -40,7 +42,7 @@ export default function FriendsScreen() {
             if (cached) {
                 setFriends(cached);
             } else {
-                Alert.alert('Błąd', 'Nie udało się załadować listy znajomych');
+                showError('Nie udało się załadować listy znajomych');
             }
         }
     }, [user]);
@@ -76,49 +78,47 @@ export default function FriendsScreen() {
     const handleSendRequest = async (recipientId: string) => {
         try {
             await friendsService.sendFriendRequest(recipientId);
-            Alert.alert('Sukces', 'Zaproszenie do znajomych zostało wysłane');
+            showSuccess('Zaproszenie zostało wysłane');
             setSearchQuery('');
             setSearchResults([]);
             await loadData();
         } catch {
-            Alert.alert('Błąd', 'Nie udało się wysłać zaproszenia');
+            showError('Nie udało się wysłać zaproszenia');
         }
     };
 
     const handleAccept = async (id: string) => {
         try {
             await friendsService.acceptFriendRequest(id);
+            showSuccess('Zaproszenie zaakceptowane');
             await loadData();
         } catch {
-            Alert.alert('Błąd', 'Nie udało się zaakceptować zaproszenia');
+            showError('Nie udało się zaakceptować zaproszenia');
         }
     };
 
     const handleReject = async (id: string) => {
         try {
             await friendsService.rejectFriendRequest(id);
+            showSuccess('Zaproszenie odrzucone');
             await loadData();
         } catch {
-            Alert.alert('Błąd', 'Nie udało się odrzucić zaproszenia');
+            showError('Nie udało się odrzucić zaproszenia');
         }
     };
 
-    const handleDelete = async (id: string) => {
-        Alert.alert('Usuń znajomego', 'Czy na pewno chcesz usunąć tę osobę ze znajomych?', [
-            { text: 'Anuluj', style: 'cancel' },
-            {
-                text: 'Usuń',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        await friendsService.deleteFriendship(id);
-                        await loadData();
-                    } catch {
-                        Alert.alert('Błąd', 'Nie udało się usunąć znajomego');
-                    }
-                },
-            },
-        ]);
+    const handleDelete = (id: string) => setDeleteId(id);
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        setDeleteId(null);
+        try {
+            await friendsService.deleteFriendship(deleteId);
+            showSuccess('Znajomy usunięty');
+            await loadData();
+        } catch {
+            showError('Nie udało się usunąć znajomego');
+        }
     };
 
     const getFriendUser = (friendship: FriendshipResponse): UserResponse => {
@@ -218,6 +218,16 @@ export default function FriendsScreen() {
                     ListEmptyComponent={<Text style={styles.emptyText}>Brak znajomych</Text>}
                 />
             )}
+
+            <ConfirmModal
+                visible={deleteId !== null}
+                title="Usuń znajomego"
+                message="Czy na pewno chcesz usunąć tę osobę ze znajomych?"
+                confirmText="Usuń"
+                destructive
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteId(null)}
+            />
         </ScrollView>
     );
 }

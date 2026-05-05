@@ -24,8 +24,20 @@ export default function AppLayout() {
             return;
         }
 
-        // Prefetch danych w tle zaraz po zalogowaniu
-        const prefetch = async () => {
+        // Inicjalizacja po zalogowaniu — sync kolejki + prefetch cache
+        const initialize = async () => {
+            try {
+                const netState = await NetInfo.fetch();
+                if (netState.isConnected) {
+                    const { synced } = await offlineQueueService.processQueue();
+                    if (synced > 0) {
+                        bumpSyncVersion();
+                    }
+                }
+            } catch {
+                // sync niekrytyczny
+            }
+
             try {
                 const [profile, expenses, friends] = await Promise.all([
                     profileService.getMe(),
@@ -38,11 +50,11 @@ export default function AppLayout() {
                     cacheService.set(CACHE_KEYS.FRIENDS, friends),
                 ]);
             } catch {
-                // prefetch jest niekrytyczny — brak sieci przy starcie jest ok
+                // prefetch niekrytyczny
             }
         };
 
-        void prefetch();
+        void initialize();
     }, [isAuthenticated]);
 
     // Auto-sync kolejki gdy wraca internet

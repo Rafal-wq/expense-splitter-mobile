@@ -5,14 +5,15 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { router } from 'expo-router';
 import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
+import { showError, showSuccess } from '@/utils/toast';
 import { useAuthStore } from '@/store/auth.store';
 import { DetailedUserResponse } from '@/types';
 
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeSection, setActiveSection] = useState<ActiveSection>('info');
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -49,7 +51,7 @@ export default function ProfileScreen() {
                 setLastName(cached.lastName);
                 setEmail(cached.email);
             } else {
-                Alert.alert('Błąd', 'Nie udało się załadować profilu');
+                showError('Nie udało się załadować profilu');
             }
         } finally {
             setLoading(false);
@@ -71,9 +73,9 @@ export default function ProfileScreen() {
             setProfile(updated);
             setUser(updated);
             setActiveSection('info');
-            Alert.alert('Sukces', 'Profil został zaktualizowany');
+            showSuccess('Profil został zaktualizowany');
         } catch {
-            Alert.alert('Błąd', 'Nie udało się zaktualizować profilu');
+            showError('Nie udało się zaktualizować profilu');
         } finally {
             setSaving(false);
         }
@@ -95,31 +97,25 @@ export default function ProfileScreen() {
             setNewPassword('');
             setRepeatNewPassword('');
             setActiveSection('info');
-            Alert.alert('Sukces', 'Hasło zostało zmienione');
+            showSuccess('Hasło zostało zmienione');
         } catch {
-            Alert.alert('Błąd', 'Nie udało się zmienić hasła. Sprawdź czy obecne hasło jest poprawne.');
+            showError('Nie udało się zmienić hasła. Sprawdź czy obecne hasło jest poprawne.');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleLogout = () => {
-        Alert.alert('Wylogowanie', 'Czy na pewno chcesz się wylogować?', [
-            { text: 'Anuluj', style: 'cancel' },
-            {
-                text: 'Wyloguj',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        await authService.logout();
-                    } catch {
-                        // offline — ignorujemy błąd API, wylogowanie lokalne i tak nastąpi
-                    }
-                    await logout();
-                    router.replace('/(auth)/login');
-                },
-            },
-        ]);
+    const handleLogout = () => setShowLogoutModal(true);
+
+    const confirmLogout = async () => {
+        setShowLogoutModal(false);
+        try {
+            await authService.logout();
+        } catch {
+            // offline — ignorujemy błąd API, wylogowanie lokalne i tak nastąpi
+        }
+        await logout();
+        router.replace('/(auth)/login');
     };
 
     if (loading) {
@@ -216,6 +212,16 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                 </>
             )}
+
+            <ConfirmModal
+                visible={showLogoutModal}
+                title="Wylogowanie"
+                message="Czy na pewno chcesz się wylogować?"
+                confirmText="Wyloguj"
+                destructive
+                onConfirm={confirmLogout}
+                onCancel={() => setShowLogoutModal(false)}
+            />
         </ScrollView>
     );
 }

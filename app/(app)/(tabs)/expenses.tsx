@@ -5,9 +5,10 @@ import {
     FlatList,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     RefreshControl,
 } from 'react-native';
+import { showError } from '@/utils/toast';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { router, useFocusEffect } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
@@ -23,6 +24,8 @@ export default function ExpensesScreen() {
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [settledMap, setSettledMap] = useState<Record<string, boolean>>({});
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deletePendingId, setDeletePendingId] = useState<string | null>(null);
     const { user } = useAuthStore();
     const { syncVersion } = useSyncStore();
 
@@ -48,19 +51,25 @@ export default function ExpensesScreen() {
         setSettledMap(Object.fromEntries(entries));
     }, [user?.id]);
 
+    const sortExpenses = (list: ExpenseResponse[]) =>
+        [...list].sort(
+            (a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()
+        );
+
     const loadExpenses = useCallback(async () => {
         try {
             const data = await expensesService.getExpenses();
-            setExpenses(data);
-            await cacheService.set(CACHE_KEYS.EXPENSES, data);
-            loadSettledStatus(data);
+            const sorted = sortExpenses(data);
+            setExpenses(sorted);
+            await cacheService.set(CACHE_KEYS.EXPENSES, sorted);
+            loadSettledStatus(sorted);
         } catch {
             const cached = await cacheService.get<ExpenseResponse[]>(CACHE_KEYS.EXPENSES);
             if (cached) {
                 setExpenses(cached);
                 loadSettledStatus(cached);
             } else {
-                Alert.alert('Błąd', 'Nie udało się załadować wydatków');
+                showError('Nie udało się załadować wydatków');
             }
         }
     }, [loadSettledStatus]);
@@ -91,22 +100,24 @@ export default function ExpensesScreen() {
         setRefreshing(false);
     }, [loadExpenses]);
 
-    const handleDelete = async (id: string) => {
-        Alert.alert('Usuń wydatek', 'Czy na pewno chcesz usunąć ten wydatek?', [
-            { text: 'Anuluj', style: 'cancel' },
-            {
-                text: 'Usuń',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        await expensesService.deleteExpense(id);
-                        await loadExpenses();
-                    } catch {
-                        Alert.alert('Błąd', 'Nie udało się usunąć wydatku');
-                    }
-                },
-            },
-        ]);
+    const handleDelete = (id: string) => setDeleteId(id);
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        setDeleteId(null);
+        try {
+            await expensesService.deleteExpense(deleteId);
+            await loadExpenses();
+        } catch {
+            showError('Nie udało się usunąć wydatku');
+        }
+    };
+
+    const confirmDeletePending = async () => {
+        if (!deletePendingId) return;
+        setDeletePendingId(null);
+        await offlineQueueService.remove(deletePendingId);
+        await loadQueue();
     };
 
     const renderExpense = ({ item }: { item: ExpenseResponse }) => {
@@ -159,6 +170,12 @@ export default function ExpensesScreen() {
                 <View style={styles.pendingBadge}>
                     <Text style={styles.pendingText}>⏳ Oczekuje</Text>
                 </View>
+                <TouchableOpacity
+                    onPress={() => setDeletePendingId(item.tempId)}
+                    style={styles.deleteButton}
+                >
+                    <Text style={styles.deleteText}>Usuń</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -190,6 +207,26 @@ export default function ExpensesScreen() {
                     ListEmptyComponent={<Text style={styles.emptyText}>Brak wydatków</Text>}
                 />
             )}
+
+            <ConfirmModal
+                visible={deleteId !== null}
+                title="Usuń wydatek"
+                message="Czy na pewno chcesz usunąć ten wydatek?"
+                confirmText="Usuń"
+                destructive
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteId(null)}
+            />
+
+            <ConfirmModal
+                visible={deletePendingId !== null}
+                title="Usuń oczekujący wydatek"
+                message="Czy na pewno chcesz usunąć ten wydatek z kolejki? Nie zostanie wysłany."
+                confirmText="Usuń"
+                destructive
+                onConfirm={confirmDeletePending}
+                onCancel={() => setDeletePendingId(null)}
+            />
         </View>
     );
 }
@@ -272,7 +309,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     deleteButton: {
-        marginTop: 8,
+        marginTop: 6,
     },
     deleteText: {
         color: '#ff3b30',
