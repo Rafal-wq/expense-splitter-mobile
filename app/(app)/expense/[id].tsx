@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
+import { cacheService } from '@/services/cache.service';
 import { DetailedExpenseResponse, PaymentResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -22,8 +23,20 @@ export default function ExpenseDetailsScreen() {
             ]);
             setExpense(expenseData);
             setPayments(paymentsData);
+            await Promise.all([
+                cacheService.set(`cache_expense_${id}`, expenseData),
+                cacheService.set(`cache_payments_${id}`, paymentsData),
+            ]);
         } catch {
-            Alert.alert('Błąd', 'Nie udało się załadować wydatku');
+            const [cachedExpense, cachedPayments] = await Promise.all([
+                cacheService.get<DetailedExpenseResponse>(`cache_expense_${id}`),
+                cacheService.get<PaymentResponse[]>(`cache_payments_${id}`),
+            ]);
+            if (cachedExpense) {
+                setExpense(cachedExpense);
+                setPayments(cachedPayments ?? []);
+            }
+            // brak cache — expense zostaje null, ekran pokaże przycisk powrotu
         } finally {
             setLoading(false);
         }
@@ -82,7 +95,11 @@ export default function ExpenseDetailsScreen() {
     if (!expense) {
         return (
             <View style={styles.center}>
-                <Text>Nie znaleziono wydatku</Text>
+                <Text style={styles.errorText}>Nie udało się załadować wydatku</Text>
+                <Text style={styles.errorSubtext}>Brak danych w trybie offline</Text>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButtonCenter}>
+                    <Text style={styles.backButtonCenterText}>← Wróć do listy</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -199,7 +216,11 @@ export default function ExpenseDetailsScreen() {
 
 const styles = StyleSheet.create({
     container: { flexGrow: 1, padding: 24, backgroundColor: '#fff' },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    errorText: { fontSize: 17, fontWeight: '600', color: '#333', marginBottom: 8 },
+    errorSubtext: { fontSize: 14, color: '#687076', marginBottom: 24 },
+    backButtonCenter: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: '#0a7ea4', borderRadius: 8 },
+    backButtonCenterText: { color: '#0a7ea4', fontSize: 15, fontWeight: '600' },
     backButton: { marginBottom: 16 },
     backText: { color: '#0a7ea4', fontSize: 16 },
     title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },

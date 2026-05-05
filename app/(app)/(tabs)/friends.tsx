@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { friendsService } from '@/services/friends.service';
 import { usersService } from '@/services/users.service';
+import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { FriendshipResponse, SimpleUserResponse, UserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -33,8 +34,14 @@ export default function FriendsScreen() {
             ]);
             setFriends(accepted);
             setPendingReceived(pending.filter((f) => f.recipient.id === user?.id));
+            await cacheService.set(CACHE_KEYS.FRIENDS, accepted);
         } catch {
-            Alert.alert('Błąd', 'Nie udało się załadować listy znajomych');
+            const cached = await cacheService.get<FriendshipResponse[]>(CACHE_KEYS.FRIENDS);
+            if (cached) {
+                setFriends(cached);
+            } else {
+                Alert.alert('Błąd', 'Nie udało się załadować listy znajomych');
+            }
         }
     }, [user]);
 

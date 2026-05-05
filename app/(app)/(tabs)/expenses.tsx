@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
+import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { ExpenseResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
 import { isExpenseSettled } from '@/utils/expenseSettled';
@@ -47,9 +48,16 @@ export default function ExpensesScreen() {
         try {
             const data = await expensesService.getExpenses();
             setExpenses(data);
+            await cacheService.set(CACHE_KEYS.EXPENSES, data);
             loadSettledStatus(data);
         } catch {
-            Alert.alert('Błąd', 'Nie udało się załadować wydatków');
+            const cached = await cacheService.get<ExpenseResponse[]>(CACHE_KEYS.EXPENSES);
+            if (cached) {
+                setExpenses(cached);
+                loadSettledStatus(cached);
+            } else {
+                Alert.alert('Błąd', 'Nie udało się załadować wydatków');
+            }
         }
     }, [loadSettledStatus]);
 

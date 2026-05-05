@@ -3,7 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
 import { usersService } from '@/services/users.service';
-import { SimpleUserResponse } from '@/types';
+import { cacheService, CACHE_KEYS } from '@/services/cache.service';
+import { FriendshipResponse, SimpleUserResponse } from '@/types';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function CreateExpenseScreen() {
     const [title, setTitle] = useState('');
@@ -13,12 +15,15 @@ export default function CreateExpenseScreen() {
     const [participants, setParticipants] = useState<SimpleUserResponse[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SimpleUserResponse[]>([]);
+    const [isOfflineSearch, setIsOfflineSearch] = useState(false);
     const [loading, setLoading] = useState(false);
+    const { user } = useAuthStore();
 
     const handleSearch = async (query: string) => {
         setSearchQuery(query);
         if (query.trim().length < 2) {
             setSearchResults([]);
+            setIsOfflineSearch(false);
             return;
         }
         try {
@@ -27,8 +32,28 @@ export default function CreateExpenseScreen() {
                 (u) => !participants.find((p) => p.id === u.id)
             );
             setSearchResults(filtered);
+            setIsOfflineSearch(false);
         } catch {
-            setSearchResults([]);
+            // offline — szukaj wśród zapisanych znajomych
+            const cachedFriends = await cacheService.get<FriendshipResponse[]>(CACHE_KEYS.FRIENDS);
+            if (cachedFriends) {
+                const lowerQuery = query.toLowerCase();
+                const filtered = cachedFriends
+                    .map((f) => (f.requester.id === user?.id ? f.recipient : f.requester))
+                    .filter((u) => u.email.toLowerCase().includes(lowerQuery))
+                    .filter((u) => !participants.find((p) => p.id === u.id))
+                    .map((u) => ({
+                        id: u.id,
+                        email: u.email,
+                        firstName: u.email.split('@')[0],
+                        lastName: '',
+                    }));
+                setSearchResults(filtered);
+                setIsOfflineSearch(true);
+            } else {
+                setSearchResults([]);
+                setIsOfflineSearch(false);
+            }
         }
     };
 
@@ -112,6 +137,10 @@ export default function CreateExpenseScreen() {
                 onChangeText={handleSearch}
                 autoCapitalize="none"
             />
+
+            {isOfflineSearch && searchResults.length > 0 && (
+                <Text style={styles.offlineSearchLabel}>Tryb offline — wyniki z listy znajomych</Text>
+            )}
 
             {searchResults.length > 0 && (
                 <View style={styles.searchResultsContainer}>
@@ -246,5 +275,11 @@ const styles = StyleSheet.create({
     cancelText: {
         color: '#687076',
         fontSize: 16,
+    },
+    offlineSearchLabel: {
+        fontSize: 12,
+        color: '#c0392b',
+        marginBottom: 4,
+        marginTop: -8,
     },
 });

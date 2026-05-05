@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
+import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { useAuthStore } from '@/store/auth.store';
 import { DetailedUserResponse } from '@/types';
 
@@ -39,8 +40,17 @@ export default function ProfileScreen() {
             setFirstName(data.firstName);
             setLastName(data.lastName);
             setEmail(data.email);
+            await cacheService.set(CACHE_KEYS.PROFILE, data);
         } catch {
-            Alert.alert('Błąd', 'Nie udało się załadować profilu');
+            const cached = await cacheService.get<DetailedUserResponse>(CACHE_KEYS.PROFILE);
+            if (cached) {
+                setProfile(cached);
+                setFirstName(cached.firstName);
+                setLastName(cached.lastName);
+                setEmail(cached.email);
+            } else {
+                Alert.alert('Błąd', 'Nie udało się załadować profilu');
+            }
         } finally {
             setLoading(false);
         }
@@ -102,10 +112,11 @@ export default function ProfileScreen() {
                 onPress: async () => {
                     try {
                         await authService.logout();
-                    } finally {
-                        await logout();
-                        router.replace('/(auth)/login');
+                    } catch {
+                        // offline — ignorujemy błąd API, wylogowanie lokalne i tak nastąpi
                     }
+                    await logout();
+                    router.replace('/(auth)/login');
                 },
             },
         ]);
