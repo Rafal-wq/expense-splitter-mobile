@@ -4,6 +4,7 @@ import { Stack, router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuthStore } from '@/store/auth.store';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { profileService } from '@/services/profile.service';
@@ -20,6 +21,7 @@ export default function AppLayout() {
     const { hydrate: hydrateNotifications, reset: resetNotifications } = useNotificationsStore();
     const wasOnlineRef = useRef<boolean | null>(null);
     useSessionTimeout();
+    useNotificationsSocket();
 
     useEffect(() => {
         if (!isAuthenticated) {
