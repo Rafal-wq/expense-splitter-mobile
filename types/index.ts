@@ -138,3 +138,36 @@ export interface CreatePaymentRequest {
     expenseId: string;
     amount: number;
 }
+
+export interface NotificationResponse {
+    id: string;
+    userId: string;
+    title: string;
+    body: string;
+    isRead: boolean;
+    createdAt: string;
+}
+
+export interface NotificationPreferenceResponse {
+    userId: string;
+    emailNotificationsEnabled: boolean;
+    websocketNotificationsEnabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface UpdateNotificationPreferenceRequest {
+    emailNotificationsEnabled?: boolean;
+    websocketNotificationsEnabled?: boolean;
+}
+
+export interface PagedResponse<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+    first: boolean;
+    last: boolean;
+    empty: boolean;
+}

@@ -9,22 +9,25 @@ import { cacheService, CACHE_KEYS } from '@/services/cache.service';
 import { profileService } from '@/services/profile.service';
 import { expensesService } from '@/services/expenses.service';
 import { friendsService } from '@/services/friends.service';
+import { notificationsService } from '@/services/notifications.service';
 import { offlineQueueService } from '@/services/offlineQueue.service';
 import { useSyncStore } from '@/store/sync.store';
+import { useNotificationsStore } from '@/store/notifications.store';
 
 export default function AppLayout() {
     const { isAuthenticated } = useAuthStore();
     const { bumpSyncVersion } = useSyncStore();
+    const { hydrate: hydrateNotifications, reset: resetNotifications } = useNotificationsStore();
     const wasOnlineRef = useRef<boolean | null>(null);
     useSessionTimeout();
 
     useEffect(() => {
         if (!isAuthenticated) {
+            resetNotifications();
             router.replace('/(auth)/login');
             return;
         }
 
-        // Inicjalizacja po zalogowaniu — sync kolejki + prefetch cache
         const initialize = async () => {
             try {
                 const netState = await NetInfo.fetch();
@@ -52,12 +55,18 @@ export default function AppLayout() {
             } catch {
                 // prefetch niekrytyczny
             }
+
+            try {
+                const page = await notificationsService.list();
+                hydrateNotifications(page.content);
+            } catch {
+                // powiadomienia niekrytyczne
+            }
         };
 
         void initialize();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, bumpSyncVersion, hydrateNotifications, resetNotifications]);
 
-    // Auto-sync kolejki gdy wraca internet
     useEffect(() => {
         if (!isAuthenticated) return;
 
@@ -71,7 +80,7 @@ export default function AppLayout() {
                         bumpSyncVersion();
                     }
                 } catch {
-                    // sync failure — spróbujemy przy następnym połączeniu
+                    // sync failure
                 }
             }
 
@@ -86,6 +95,10 @@ export default function AppLayout() {
             <OfflineBanner />
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                    name="notifications"
+                    options={{ headerShown: true, title: 'Powiadomienia' }}
+                />
             </Stack>
         </View>
     );

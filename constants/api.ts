@@ -40,4 +40,9 @@ export const API_ENDPOINTS = {
         UPDATE: '/profile',
         CHANGE_PASSWORD: '/profile/password',
     },
+    NOTIFICATIONS: {
+        LIST: '/notifications',
+        MARK_READ: (id: string) => `/notifications/${id}/read`,
+        PREFERENCES: '/notifications/preferences',
+    },
 } as const;
