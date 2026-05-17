@@ -1,4 +1,5 @@
 import { Redirect } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function Index() {
@@ -7,6 +8,6 @@ export default function Index() {
     return isAuthenticated ? (
         <Redirect href="/(app)/(tabs)/expenses" />
     ) : (
-        <Redirect href="/(auth)/login" />
+        <Redirect href={'/(auth)/welcome' as Href} />
     );
 }
