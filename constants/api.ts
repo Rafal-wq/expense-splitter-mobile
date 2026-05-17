@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
         REFRESH: '/auth/refresh',
         RESET_PASSWORD: '/auth/reset-password',
         RESET_PASSWORD_CONFIRM: '/auth/reset-password/confirm',
+        TWO_FACTOR_VERIFY: '/auth/2fa/verify',
     },
     FRIENDSHIPS: {
         LIST: '/friendships',
@@ -39,6 +40,9 @@ export const API_ENDPOINTS = {
         ME: '/profile',
         UPDATE: '/profile',
         CHANGE_PASSWORD: '/profile/password',
+        TWO_FACTOR_ENABLE: '/profile/2fa/enable',
+        TWO_FACTOR_CONFIRM: '/profile/2fa/confirm',
+        TWO_FACTOR_DISABLE: '/profile/2fa/disable',
     },
     NOTIFICATIONS: {
         LIST: '/notifications',

@@ -31,17 +31,18 @@ export default function CreateExpenseScreen() {
         try {
             const results = await usersService.searchUsers(query);
             const filtered = results.filter(
-                (u) => !participants.find((p) => p.id === u.id)
+                (u) => u.id !== user?.id && !participants.find((p) => p.id === u.id)
             );
             setSearchResults(filtered);
             setIsOfflineSearch(false);
         } catch {
-            // offline — szukaj wśród zapisanych znajomych
+            // offline
             const cachedFriends = await cacheService.get<FriendshipResponse[]>(CACHE_KEYS.FRIENDS);
             if (cachedFriends) {
                 const lowerQuery = query.toLowerCase();
                 const filtered = cachedFriends
                     .map((f) => (f.requester.id === user?.id ? f.recipient : f.requester))
+                    .filter((u) => u.id !== user?.id)
                     .filter((u) => u.email.toLowerCase().includes(lowerQuery))
                     .filter((u) => !participants.find((p) => p.id === u.id))
                     .map((u) => ({

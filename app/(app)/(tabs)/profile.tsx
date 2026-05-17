@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,9 +7,11 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { ConfirmModal } from '@/components/ConfirmModal';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import type { Href } from 'expo-router';
 import { profileService } from '@/services/profile.service';
 import { authService } from '@/services/auth.service';
 import { cacheService, CACHE_KEYS } from '@/services/cache.service';
@@ -26,6 +28,7 @@ export default function ProfileScreen() {
     const [saving, setSaving] = useState(false);
     const [activeSection, setActiveSection] = useState<ActiveSection>('info');
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -58,9 +61,11 @@ export default function ProfileScreen() {
         }
     }, []);
 
-    useEffect(() => {
-        loadProfile();
-    }, [loadProfile]);
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [loadProfile])
+    );
 
     const handleSaveProfile = async () => {
         if (!firstName.trim() || !lastName.trim() || !email.trim()) {
@@ -112,10 +117,20 @@ export default function ProfileScreen() {
         try {
             await authService.logout();
         } catch {
-            // offline — ignorujemy błąd API, wylogowanie lokalne i tak nastąpi
         }
         await logout();
         router.replace('/(auth)/login');
+    };
+
+    const confirmDisable2FA = async () => {
+        setShowDisable2FAModal(false);
+        try {
+            await profileService.disable2FA();
+            showSuccess('Dwuetapowa weryfikacja wyłączona');
+            await loadProfile();
+        } catch {
+            showError('Nie udało się wyłączyć 2FA');
+        }
     };
 
     if (loading) {
@@ -161,6 +176,12 @@ export default function ProfileScreen() {
                                 {new Date(profile.createdAt).toLocaleDateString('pl-PL')}
                             </Text>
                         </View>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>2FA</Text>
+                            <Text style={styles.infoValue}>
+                                {profile.isTwoFactorAuthEnabled ? 'Włączone' : 'Wyłączone'}
+                            </Text>
+                        </View>
                     </View>
 
                     <TouchableOpacity style={styles.actionButton} onPress={() => setActiveSection('editProfile')}>
@@ -170,6 +191,16 @@ export default function ProfileScreen() {
                     <TouchableOpacity style={styles.actionButton} onPress={() => setActiveSection('changePassword')}>
                         <Text style={styles.actionButtonText}>Zmień hasło</Text>
                     </TouchableOpacity>
+
+                    {profile.isTwoFactorAuthEnabled ? (
+                        <TouchableOpacity style={styles.actionButton} onPress={() => setShowDisable2FAModal(true)}>
+                            <Text style={styles.actionButtonText}>Wyłącz 2FA</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(app)/two-factor-setup' as Href)}>
+                            <Text style={styles.actionButtonText}>Włącz 2FA</Text>
+                        </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Text style={styles.logoutText}>Wyloguj się</Text>
@@ -221,6 +252,16 @@ export default function ProfileScreen() {
                 destructive
                 onConfirm={confirmLogout}
                 onCancel={() => setShowLogoutModal(false)}
+            />
+
+            <ConfirmModal
+                visible={showDisable2FAModal}
+                title="Wyłącz 2FA"
+                message="Czy na pewno chcesz wyłączyć dwuetapową weryfikację? Twoje konto będzie mniej bezpieczne."
+                confirmText="Wyłącz"
+                destructive
+                onConfirm={confirmDisable2FA}
+                onCancel={() => setShowDisable2FAModal(false)}
             />
         </ScrollView>
     );

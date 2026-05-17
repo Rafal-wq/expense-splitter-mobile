@@ -40,7 +40,6 @@ export default function AppLayout() {
                     }
                 }
             } catch {
-                // sync niekrytyczny
             }
 
             try {
@@ -55,14 +54,12 @@ export default function AppLayout() {
                     cacheService.set(CACHE_KEYS.FRIENDS, friends),
                 ]);
             } catch {
-                // prefetch niekrytyczny
             }
 
             try {
                 const page = await notificationsService.list();
                 hydrateNotifications(page.content);
             } catch {
-                // powiadomienia niekrytyczne
             }
         };
 
@@ -82,7 +79,6 @@ export default function AppLayout() {
                         bumpSyncVersion();
                     }
                 } catch {
-                    // sync failure
                 }
             }
 
@@ -101,6 +97,7 @@ export default function AppLayout() {
                     name="notifications"
                     options={{ headerShown: true, title: 'Powiadomienia' }}
                 />
+                <Stack.Screen name="two-factor-setup" />
             </Stack>
         </View>
     );

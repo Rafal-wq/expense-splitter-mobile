@@ -20,6 +20,7 @@ export interface RegisterRequest {
 export interface LoginResponse {
     accessToken: string;
     refreshToken: string;
+    twoFactorRequired: boolean;
 }
 
 export interface UserResponse {
@@ -49,6 +50,7 @@ export interface DetailedUserResponse {
     lastName: string;
     role: Role;
     identities: UserIdentityResponse[];
+    isTwoFactorAuthEnabled: boolean;
     createdAt: string;
     updatedAt: string;
     deletedAt: string | null;

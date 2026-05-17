@@ -106,7 +106,7 @@ docker-compose --profile dev up -d
 - [x] Akceptowanie zaproszenia do znajomych
 - [x] Odrzucanie zaproszenia do znajomych
 - [x] Usuwanie znajomego
-- [ ] Powiadomienie push o nowym zaproszeniu
+- [x] Powiadomienie in-app o nowym zaproszeniu (WebSocket + toast)
 
 ### Etap 3 — Wydatki
 - [x] Lista wydatków
@@ -116,7 +116,8 @@ docker-compose --profile dev up -d
 - [x] Szczegóły wydatku
 - [x] Oznaczanie części jako spłaconej
 - [x] Wizualny wskaźnik rozliczenia wydatku na liście
-- [ ] Powiadomienie push o nowym wydatku
+- [x] Powiadomienie in-app o nowym wydatku (WebSocket + toast)
+- [x] Blokada dodawania siebie jako uczestnika wydatku
 
 ### Etap 4 — Tryb offline
 - [x] Wykrywanie stanu sieci (NetInfo)
@@ -128,5 +129,14 @@ docker-compose --profile dev up -d
 - [x] Automatyczna synchronizacja kolejki przy powrocie internetu
 - [x] Wizualny wskaźnik wydatków oczekujących na synchronizację
 
-### Etap 5 — OAuth2
-- [ ] Logowanie przez Google
+### Etap 5 — System powiadomień
+- [x] Połączenie WebSocket (STOMP-over-SockJS) z autoryzacją JWT
+- [x] Subskrypcja kanału `/user/notifications` z auto-reconnect
+- [x] Lista nieprzeczytanych powiadomień (ekran + ikona dzwoneczka z badge)
+- [x] Oznaczanie powiadomień jako przeczytane (REST `PATCH /notifications/{id}/read`)
+- [x] Toast in-app przy nowym powiadomieniu odebranym przez WebSocket
+
+### Etap 6 — OAuth2
+- [ ] Logowanie przez Google — niezaimplementowane
+
+Backend OAuth2 jest zaprojektowany pod aplikację SPA web w tej samej domenie: po przekierowaniu z Google backend zwraca tokeny w body odpowiedzi (JSON), bez deep linku czy custom URI scheme dla aplikacji mobilnej. Próba implementacji przez embedded WebView została zablokowana przez politykę Google, która od 2021 roku odrzuca żądania OAuth z embedded webview ze względów bezpieczeństwa (ochrona przed phishingiem). Standardowy mobilny wzorzec — pobranie `id_token` od Google przez `expo-auth-session` (Chrome Custom Tabs) i wymiana go na JWT na backendzie — wymagałby dodania endpointu `POST /auth/oauth2/google/token` po stronie API.
