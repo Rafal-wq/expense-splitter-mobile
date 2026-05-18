@@ -137,6 +137,9 @@ docker-compose --profile dev up -d
 - [x] Toast in-app przy nowym powiadomieniu odebranym przez WebSocket
 
 ### Etap 6 — OAuth2
-- [ ] Logowanie przez Google — niezaimplementowane
+- [ ] Logowanie przez Google — niezaimplementowane w mobilce
+- [ ] Logowanie przez Facebook — niezaimplementowane w mobilce
 
-Backend OAuth2 jest zaprojektowany pod aplikację SPA web w tej samej domenie: po przekierowaniu z Google backend zwraca tokeny w body odpowiedzi (JSON), bez deep linku czy custom URI scheme dla aplikacji mobilnej. Próba implementacji przez embedded WebView została zablokowana przez politykę Google, która od 2021 roku odrzuca żądania OAuth z embedded webview ze względów bezpieczeństwa (ochrona przed phishingiem). Standardowy mobilny wzorzec — pobranie `id_token` od Google przez `expo-auth-session` (Chrome Custom Tabs) i wymiana go na JWT na backendzie — wymagałby dodania endpointu `POST /auth/oauth2/google/token` po stronie API.
+Autor backendu zaimplementował dedykowany endpoint `POST /auth/oauth2/google/token` umożliwiający wymianę Google ID token na JWT systemu (PR #40), co w teorii pozwala na zaimplementowanie pełnego flow OAuth2 Google po stronie aplikacji mobilnej z użyciem `expo-auth-session` i Chrome Custom Tabs. Do uruchomienia po stronie klienta konieczna byłaby jednak dodatkowa konfiguracja Google Cloud Console projektu OAuth2 (dodanie redirect URI dla aplikacji Expo / EAS Build), co wymaga akcji ze strony właściciela projektu Google Cloud. Ze względu na priorytety czasowe oraz niezawarcie OAuth2 w pierwotnej liście funkcjonalności projektu, funkcjonalność została odłożona poza zakres bieżącej iteracji.
+
+Logowanie przez Facebook — backend wspiera, ale aplikacja OAuth zarejestrowana w Facebook Developer Console jest aktualnie w stanie nieaktywnym i nie zostanie aktywowana w ramach projektu, w związku z czym funkcjonalność została wycofana z aplikacji mobilnej.

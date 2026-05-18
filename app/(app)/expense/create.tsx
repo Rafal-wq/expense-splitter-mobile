@@ -36,7 +36,6 @@ export default function CreateExpenseScreen() {
             setSearchResults(filtered);
             setIsOfflineSearch(false);
         } catch {
-            // offline
             const cachedFriends = await cacheService.get<FriendshipResponse[]>(CACHE_KEYS.FRIENDS);
             if (cachedFriends) {
                 const lowerQuery = query.toLowerCase();
@@ -95,10 +94,17 @@ export default function CreateExpenseScreen() {
             await expensesService.createExpense(payload);
             showSuccess('Wydatek został utworzony');
             router.back();
-        } catch {
-            await offlineQueueService.add(payload);
-            showInfo('Tryb offline', 'Wydatek zostanie wysłany gdy wróci internet');
-            router.back();
+        } catch (err: any) {
+            if (!err?.response) {
+                await offlineQueueService.add(payload);
+                showInfo('Tryb offline', 'Wydatek zostanie wysłany gdy wróci internet');
+                router.back();
+            } else {
+                const detail = err.response.data?.detail
+                    || err.response.data?.title
+                    || err.response.data?.message;
+                showError(detail || 'Nie udało się utworzyć wydatku');
+            }
         } finally {
             setLoading(false);
         }

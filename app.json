@@ -13,7 +13,6 @@
     },
     "android": {
       "package": "com.expensesplitter.app",
-      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -35,11 +34,18 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "62b8186e-ea79-402f-bcad-de3b92c37313"
+      }
     }
   }
 }

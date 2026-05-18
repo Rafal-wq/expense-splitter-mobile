@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
-import type { Href } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
 import { profileService } from '@/services/profile.service';
@@ -66,13 +64,6 @@ export default function LoginScreen() {
             <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
                 <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.facebookButton}
-                onPress={() => router.push('/(auth)/oauth-facebook' as Href)}
-            >
-                <Ionicons name="logo-facebook" size={18} color="#fff" />
-                <Text style={styles.facebookButtonText}>Zaloguj przez Facebook</Text>
-            </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
                 <Text style={styles.link}>Don't have an account? Register</Text>
             </TouchableOpacity>
@@ -134,21 +125,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    facebookButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#1877f2',
-        padding: 14,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    facebookButtonText: {
-        color: '#fff',
-        fontSize: 15,
-        fontWeight: '600',
     },
     link: {
         color: '#0a7ea4',
