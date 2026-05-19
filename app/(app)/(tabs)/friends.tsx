@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
     View,
     Text,
@@ -16,6 +17,7 @@ import { showError, showSuccess } from '@/utils/toast';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { FriendshipResponse, SimpleUserResponse, UserResponse } from '@/types';
 import { useAuthStore } from '@/store/auth.store';
+import { notificationsSocket } from '@/services/websocket.service';
 
 export default function FriendsScreen() {
     const [friends, setFriends] = useState<FriendshipResponse[]>([]);
@@ -47,9 +49,20 @@ export default function FriendsScreen() {
         }
     }, [user]);
 
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true);
+            loadData().finally(() => setLoading(false));
+        }, [loadData])
+    );
+
     useEffect(() => {
-        setLoading(true);
-        loadData().finally(() => setLoading(false));
+        const removeListener = notificationsSocket.addListener((payload) => {
+            if (payload.title.toLowerCase().includes('friend')) {
+                loadData();
+            }
+        });
+        return () => removeListener();
     }, [loadData]);
 
     const onRefresh = useCallback(async () => {
