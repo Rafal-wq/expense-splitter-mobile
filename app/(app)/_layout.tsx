@@ -14,6 +14,7 @@ import { notificationsService } from '@/services/notifications.service';
 import { offlineQueueService } from '@/services/offlineQueue.service';
 import { useSyncStore } from '@/store/sync.store';
 import { useNotificationsStore } from '@/store/notifications.store';
+import { AppState } from 'react-native';
 
 export default function AppLayout() {
     const { isAuthenticated } = useAuthStore();
@@ -86,6 +87,22 @@ export default function AppLayout() {
         });
 
         return () => unsubscribe();
+    }, [isAuthenticated, bumpSyncVersion]);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        const subscription = AppState.addEventListener('change', async (state) => {
+            if (state === 'active') {
+                try {
+                    const { synced } = await offlineQueueService.processQueue();
+                    if (synced > 0) {
+                        bumpSyncVersion();
+                    }
+                } catch {
+                }
+            }
+        });
+        return () => subscription.remove();
     }, [isAuthenticated, bumpSyncVersion]);
 
     return (

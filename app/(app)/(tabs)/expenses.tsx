@@ -96,9 +96,16 @@ export default function ExpensesScreen() {
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await loadExpenses();
+        try {
+            const queue = await offlineQueueService.getQueue();
+            if (queue.length > 0) {
+                await offlineQueueService.processQueue();
+            }
+        } catch {
+        }
+        await Promise.all([loadExpenses(), loadQueue()]);
         setRefreshing(false);
-    }, [loadExpenses]);
+    }, [loadExpenses, loadQueue]);
 
     const handleDelete = (id: string) => setDeleteId(id);
 
