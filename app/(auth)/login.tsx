@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
 import { profileService } from '@/services/profile.service';
+import { showError } from '@/utils/toast';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ export default function LoginScreen() {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showError('Please fill in all fields');
             return;
         }
         setLoading(true);
@@ -32,7 +33,7 @@ export default function LoginScreen() {
             setUser(profile);
             router.replace('/(app)/(tabs)/expenses');
         } catch {
-            Alert.alert('Error', 'Invalid email or password');
+            showError('Invalid email or password');
         } finally {
             setLoading(false);
         }

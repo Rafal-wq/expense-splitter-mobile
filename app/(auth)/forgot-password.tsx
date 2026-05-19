@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { authService } from '@/services/auth.service';
+import { showError, showSuccess } from '@/utils/toast';
 
 export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export default function ForgotPasswordScreen() {
 
     const handleResetPassword = async () => {
         if (!email) {
-            Alert.alert('Error', 'Please enter your email address');
+            showError('Please enter your email address');
             return;
         }
         setLoading(true);
@@ -23,7 +24,7 @@ export default function ForgotPasswordScreen() {
             await authService.resetPassword(email);
             setStep('confirm');
         } catch {
-            Alert.alert('Error', 'Failed to send reset email. Please try again');
+            showError('Failed to send reset email. Please try again');
         } finally {
             setLoading(false);
         }
@@ -31,21 +32,20 @@ export default function ForgotPasswordScreen() {
 
     const handleConfirmReset = async () => {
         if (!token || !newPassword || !repeatNewPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showError('Please fill in all fields');
             return;
         }
         if (newPassword !== repeatNewPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            showError('Passwords do not match');
             return;
         }
         setLoading(true);
         try {
             await authService.confirmResetPassword(token, newPassword, repeatNewPassword);
-            Alert.alert('Success', 'Password reset successfully', [
-                { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-            ]);
+            showSuccess('Password reset successfully');
+            router.replace('/(auth)/login');
         } catch {
-            Alert.alert('Error', 'Failed to reset password. Check your token and try again');
+            showError('Failed to reset password. Check your token and try again');
         } finally {
             setLoading(false);
         }

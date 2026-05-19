@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { expensesService } from '@/services/expenses.service';
+import { showError, showSuccess } from '@/utils/toast';
 
 export default function EditExpenseScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,7 +20,7 @@ export default function EditExpenseScreen() {
             setDescription(data.description ?? '');
             setAmount(data.amountTotal.toString());
         } catch {
-            Alert.alert('Błąd', 'Nie udało się załadować wydatku');
+            showError('Nie udało się załadować wydatku');
             router.back();
         } finally {
             setLoading(false);
@@ -32,12 +33,7 @@ export default function EditExpenseScreen() {
 
     const handleSave = async () => {
         if (!title.trim()) {
-            Alert.alert('Błąd', 'Tytuł jest wymagany');
-            return;
-        }
-        const parsedAmount = parseFloat(amount);
-        if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
-            Alert.alert('Błąd', 'Podaj poprawną kwotę');
+            showError('Tytuł jest wymagany');
             return;
         }
         if (!id) return;
@@ -46,13 +42,11 @@ export default function EditExpenseScreen() {
             await expensesService.updateExpense(id, {
                 title: title.trim(),
                 description: description.trim() || undefined,
-                amount: parsedAmount,
             });
-            Alert.alert('Sukces', 'Wydatek został zaktualizowany', [
-                { text: 'OK', onPress: () => router.back() },
-            ]);
+            showSuccess('Wydatek został zaktualizowany');
+            router.back();
         } catch {
-            Alert.alert('Błąd', 'Nie udało się zaktualizować wydatku');
+            showError('Nie udało się zaktualizować wydatku');
         } finally {
             setSaving(false);
         }
@@ -81,7 +75,14 @@ export default function EditExpenseScreen() {
             <TextInput style={[styles.input, styles.multilineInput]} placeholder="Opis" value={description} onChangeText={setDescription} multiline numberOfLines={3} />
 
             <Text style={styles.label}>Kwota (zł)</Text>
-            <TextInput style={styles.input} placeholder="Kwota" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
+            <TextInput
+                style={[styles.input, styles.inputDisabled]}
+                value={amount}
+                editable={false}
+            />
+            <Text style={styles.helperText}>
+                Kwoty wydatku nie można zmienić. Jeśli kwota się zmieniła, usuń ten wydatek i utwórz nowy.
+            </Text>
 
             <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
                 <Text style={styles.saveButtonText}>{saving ? 'Zapisywanie...' : 'Zapisz zmiany'}</Text>
@@ -101,6 +102,8 @@ const styles = StyleSheet.create({
     title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24 },
     label: { fontSize: 14, color: '#687076', marginBottom: 4 },
     input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 },
+    inputDisabled: { backgroundColor: '#f5f7f9', color: '#687076' },
+    helperText: { fontSize: 13, color: '#687076', marginTop: -8, marginBottom: 16, fontStyle: 'italic' },
     multilineInput: { height: 80, textAlignVertical: 'top' },
     saveButton: { backgroundColor: '#0a7ea4', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
     saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },

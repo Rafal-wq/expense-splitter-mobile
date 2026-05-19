@@ -7,7 +7,6 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { router, useFocusEffect } from 'expo-router';
@@ -69,7 +68,7 @@ export default function ProfileScreen() {
 
     const handleSaveProfile = async () => {
         if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-            Alert.alert('Błąd', 'Wszystkie pola są wymagane');
+            showError('Wszystkie pola są wymagane');
             return;
         }
         setSaving(true);
@@ -88,11 +87,11 @@ export default function ProfileScreen() {
 
     const handleChangePassword = async () => {
         if (!oldPassword || !newPassword || !repeatNewPassword) {
-            Alert.alert('Błąd', 'Wszystkie pola są wymagane');
+            showError('Wszystkie pola są wymagane');
             return;
         }
         if (newPassword !== repeatNewPassword) {
-            Alert.alert('Błąd', 'Nowe hasła nie są identyczne');
+            showError('Nowe hasła nie są identyczne');
             return;
         }
         setSaving(true);

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { authService } from '@/services/auth.service';
+import { showError, showSuccess } from '@/utils/toast';
 import axios from 'axios';
 
 export default function RegisterScreen() {
@@ -29,33 +30,32 @@ export default function RegisterScreen() {
 
     const handleRegister = async () => {
         if (!email || !firstName || !lastName || !newPassword || !repeatNewPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showError('Please fill in all fields');
             return;
         }
         if (!validateEmail(email)) {
-            Alert.alert('Error', 'Please enter a valid email address');
+            showError('Please enter a valid email address');
             return;
         }
         const passwordError = validatePassword(newPassword);
         if (passwordError) {
-            Alert.alert('Error', passwordError);
+            showError(passwordError);
             return;
         }
         if (newPassword !== repeatNewPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            showError('Passwords do not match');
             return;
         }
         setLoading(true);
         try {
             await authService.register({ email, firstName, lastName, newPassword, repeatNewPassword });
-            Alert.alert('Success', 'Account created successfully', [
-                { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-            ]);
+            showSuccess('Account created successfully');
+            router.replace('/(auth)/login');
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.data?.message) {
-                Alert.alert('Error', error.response.data.message);
+                showError(error.response.data.message);
             } else {
-                Alert.alert('Error', 'Registration failed. Please try again');
+                showError('Registration failed. Please try again');
             }
         } finally {
             setLoading(false);

@@ -97,7 +97,7 @@ export interface CreateExpenseRequest {
 export interface UpdateExpenseRequest {
     title?: string;
     description?: string;
-    amount?: number;
+    expenseDate?: string;
 }
 
 export interface ExpenseShare {
