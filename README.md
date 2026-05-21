@@ -6,12 +6,24 @@ Aplikacja jest częścią większego projektu składającego się z:
 - **expense-splitter-api** — backend REST API (Spring Boot)
 - **expense-splitter-mobile** — aplikacja mobilna (React Native / Expo)
 
+## Funkcjonalności
+
+- Rejestracja i logowanie z tokenami JWT
+- Dwuetapowa weryfikacja (2FA) oparta na TOTP — zgodna z Google Authenticator
+- Reset hasła przez email
+- Zarządzanie znajomymi — wyszukiwanie, zaproszenia, akceptacja/odrzucanie, usuwanie
+- Tworzenie i podział wydatków grupowych, edycja wydatków
+- Oznaczanie spłat oraz wizualny wskaźnik rozliczenia
+- Powiadomienia w czasie rzeczywistym (WebSocket) o nowych zaproszeniach i wydatkach
+- Tryb offline — cache danych i kolejka synchronizacji wydatków
+- Ekran powitalny dla niezalogowanych użytkowników
+
 ## Wymagania
 
 - Node.js 20+
-- Expo Go (na urządzeniu mobilnym z Android)
+- Expo Go (na urządzeniu z systemem Android lub iOS) — do uruchomienia w trybie deweloperskim
 
-## Uruchomienie aplikacji mobilnej
+## Uruchomienie aplikacji (tryb deweloperski)
 
 Backend jest wdrożony i dostępny publicznie pod adresem `https://wydatkomat.tech/api`.
 
@@ -28,13 +40,21 @@ Uzupełnij plik `.env`:
 EXPO_PUBLIC_API_URL=https://wydatkomat.tech/api
 ```
 
-Następnie uruchom:
+Następnie uruchom serwer deweloperski:
 
 ```bash
 npx expo start
 ```
 
-Zeskanuj kod QR aplikacją Expo Go na telefonie.
+Zeskanuj wyświetlony kod QR aplikacją Expo Go na telefonie. Telefon i komputer muszą znajdować się w tej samej sieci lokalnej.
+
+## Uruchamianie testów
+
+Projekt zawiera testy jednostkowe (Jest + React Native Testing Library):
+
+```bash
+npm test
+```
 
 ## Uruchomienie backendu lokalnie (opcjonalne)
 
@@ -88,12 +108,17 @@ EXPO_PUBLIC_API_URL=http://<IP_KOMPUTERA>:8080/api
 ## Technologie
 
 ### Aplikacja mobilna
-- React Native z Expo SDK 54
+- React Native 0.81 z Expo SDK 54
 - TypeScript
-- Expo Router
-- Axios
-- Zustand
-- Expo Secure Store
+- Expo Router (nawigacja oparta o strukturę plików)
+- Axios (klient HTTP z interceptorami)
+- Zustand (zarządzanie stanem globalnym)
+- Expo Secure Store (bezpieczne przechowywanie tokenów)
+- AsyncStorage (cache trybu offline)
+- NetInfo (wykrywanie stanu sieci)
+- @stomp/stompjs + sockjs-client (komunikacja WebSocket, powiadomienia)
+- react-native-toast-message (powiadomienia in-app)
+- Jest + React Native Testing Library (testy jednostkowe)
 
 ### Backend
 - Spring Boot 4
@@ -105,5 +130,7 @@ EXPO_PUBLIC_API_URL=http://<IP_KOMPUTERA>:8080/api
 
 ## Autorzy
 
-- **Rafał** — aplikacja mobilna
+- **Rafał Wilczewski** — aplikacja mobilna
 - **Sebastian Górski** — backend API
+- **Łukasz Szenkiel** - aplikacja desktopowa
+- **Jakub Grzymisławski** — aplikacja webowa

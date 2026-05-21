@@ -2,61 +2,95 @@
 
 ## Tech Stack
 
-- React Native with Expo SDK 54
+- React Native 0.81 z Expo SDK 54
 - TypeScript
-- Expo Router (file-based navigation)
-- Axios (HTTP client)
-- Zustand (global state management)
-- Expo Secure Store (secure token storage)
+- Expo Router (nawigacja oparta o strukturę plików, typed routes)
+- Axios (klient HTTP z interceptorami)
+- Zustand (zarządzanie stanem globalnym)
+- Expo Secure Store (bezpieczne przechowywanie tokenów JWT)
 - AsyncStorage (cache i kolejka offline)
 - NetInfo (wykrywanie stanu sieci)
+- @stomp/stompjs + sockjs-client (komunikacja WebSocket — powiadomienia w czasie rzeczywistym)
+- react-native-toast-message (powiadomienia in-app)
+- Jest + React Native Testing Library (testy jednostkowe)
 
 ## Project Structure
+
 ```
 app/
-├── (auth)/
+├── _layout.tsx                 # Layout główny aplikacji
+├── index.tsx                   # Punkt wejścia — przekierowanie wg stanu auth
+├── (auth)/                     # Ekrany przed zalogowaniem
 │   ├── _layout.tsx
-│   ├── login.tsx
-│   ├── register.tsx
-│   └── forgot-password.tsx
-├── (app)/
-│   ├── _layout.tsx
-│   └── (tabs)/
-│       ├── _layout.tsx
-│       ├── expenses.tsx
-│       └── friends.tsx
-├── _layout.tsx
-└── index.tsx
+│   ├── welcome.tsx             # Ekran powitalny
+│   ├── login.tsx               # Logowanie
+│   ├── register.tsx            # Rejestracja
+│   ├── forgot-password.tsx     # Reset hasła
+│   └── two-factor.tsx          # Weryfikacja 2FA przy logowaniu
+└── (app)/                      # Ekrany po zalogowaniu
+    ├── _layout.tsx
+    ├── notifications.tsx       # Lista powiadomień
+    ├── two-factor-setup.tsx    # Włączanie 2FA (kod QR)
+    ├── (tabs)/                 # Dolny pasek zakładek
+    │   ├── _layout.tsx
+    │   ├── expenses.tsx        # Lista wydatków
+    │   ├── friends.tsx         # Znajomi
+    │   └── profile.tsx         # Profil użytkownika
+    └── expense/
+        ├── create.tsx          # Tworzenie wydatku
+        ├── [id].tsx            # Szczegóły wydatku
+        └── edit/[id].tsx       # Edycja wydatku
 
 components/
-├── auth/
-└── ui/
+├── ConfirmModal.tsx            # Modal potwierdzenia operacji
+├── NotificationsBell.tsx       # Ikona dzwonka z licznikiem powiadomień
+└── OfflineBanner.tsx           # Baner trybu offline
 
 constants/
-├── api.ts
+├── api.ts                      # Adresy endpointów API
 └── theme.ts
 
 hooks/
-├── useSessionTimeout.ts
-└── useNetworkStatus.ts
-
-components/
-└── OfflineBanner.tsx
+├── useNetworkStatus.ts         # Stan połączenia sieciowego
+├── useNotificationsSocket.ts   # Cykl życia połączenia WebSocket
+├── useSessionTimeout.ts        # Wygasanie sesji po nieaktywności
+├── use-color-scheme.ts
+├── use-color-scheme.web.ts
+└── use-theme-color.ts
 
 services/
-├── api.ts
-├── auth.service.ts
-├── cache.service.ts
-└── offlineQueue.service.ts
+├── api.ts                      # Instancja axios + interceptory (auth, refresh)
+├── auth.service.ts             # Logowanie, rejestracja, 2FA verify, reset hasła
+├── profile.service.ts          # Profil, zmiana hasła, zarządzanie 2FA
+├── friends.service.ts          # Znajomi i zaproszenia
+├── expenses.service.ts         # Wydatki i płatności
+├── users.service.ts            # Wyszukiwanie użytkowników
+├── notifications.service.ts    # Powiadomienia (REST)
+├── websocket.service.ts        # Klient STOMP-over-SockJS
+├── cache.service.ts            # Cache lokalny (AsyncStorage)
+└── offlineQueue.service.ts     # Kolejka operacji offline
 
 store/
-├── auth.store.ts
-└── sync.store.ts
+├── auth.store.ts               # Stan sesji użytkownika
+├── notifications.store.ts      # Stan powiadomień (lista, licznik)
+└── sync.store.ts               # Sygnał synchronizacji kolejki offline
 
 types/
-└── index.ts
-```
+└── index.ts                    # Definicje typów TypeScript
 
+utils/
+├── expenseSettled.ts           # Logika ustalania statusu rozliczenia
+└── toast.ts                    # Funkcje pomocnicze toastów
+
+__tests__/
+├── services/
+│   ├── auth.service.test.ts
+│   └── expenses.service.test.ts
+├── store/
+│   └── notifications.store.test.ts
+└── utils/
+    └── expenseSettled.test.ts
+```
 
 ## Zmienne środowiskowe
 
@@ -85,8 +119,15 @@ docker-compose --profile dev up -d
 - Tokeny przechowywane bezpiecznie przez Expo Secure Store
 - Access token automatycznie dołączany do każdego żądania API
 - Automatyczne odświeżanie tokenu przy błędzie 401
-- Sesja wygasa po 15 minutach nieaktywności
-- Ręczne wylogowanie dostępne z paska zakładek
+- Opcjonalna dwuetapowa weryfikacja (2FA) oparta na TOTP — zgodna z aplikacjami typu Google Authenticator
+- Sesja wygasa po 60 minutach nieaktywności
+- Ręczne wylogowanie dostępne z zakładki profilu
+
+## Testy
+
+Projekt zawiera testy jednostkowe uruchamiane poleceniem `npm test`.
+Testami pokryto kluczową logikę biznesową (ustalanie statusu rozliczenia wydatku),
+serwisy komunikacji z API (auth, expenses) oraz store powiadomień.
 
 ## Lista funkcjonalności
 
@@ -96,8 +137,10 @@ docker-compose --profile dev up -d
 - [x] Podgląd wpisanego hasła (przycisk oczka)
 - [x] Reset hasła przez email
 - [x] Automatyczne przekierowanie na podstawie stanu auth
-- [x] Wygasanie sesji po 15 minutach nieaktywności
+- [x] Ekran powitalny dla niezalogowanych użytkowników
+- [x] Wygasanie sesji po 60 minutach nieaktywności
 - [x] Ręczne wylogowanie
+- [x] Dwuetapowa weryfikacja (2FA) — TOTP, włączanie z kodem QR, weryfikacja przy logowaniu, wyłączanie
 
 ### Etap 2 — Znajomi
 - [x] Lista znajomych
@@ -111,6 +154,7 @@ docker-compose --profile dev up -d
 ### Etap 3 — Wydatki
 - [x] Lista wydatków
 - [x] Tworzenie wydatku
+- [x] Edycja wydatku (tytuł, opis)
 - [x] Dodawanie uczestników do wydatku
 - [x] Usuwanie uczestników z wydatku
 - [x] Szczegóły wydatku
@@ -126,7 +170,7 @@ docker-compose --profile dev up -d
 - [x] Przeglądanie wydatków, profilu i znajomych offline z cache
 - [x] Wyszukiwanie uczestników offline z cache znajomych
 - [x] Tworzenie wydatku offline — kolejka lokalna z auto-sync
-- [x] Automatyczna synchronizacja kolejki przy powrocie internetu
+- [x] Automatyczna synchronizacja kolejki przy powrocie internetu oraz przy powrocie aplikacji z tła
 - [x] Wizualny wskaźnik wydatków oczekujących na synchronizację
 
 ### Etap 5 — System powiadomień
@@ -136,10 +180,7 @@ docker-compose --profile dev up -d
 - [x] Oznaczanie powiadomień jako przeczytane (REST `PATCH /notifications/{id}/read`)
 - [x] Toast in-app przy nowym powiadomieniu odebranym przez WebSocket
 
-### Etap 6 — OAuth2
+### Etap 6 (do rozwinięcia w przyszłości)— OAuth2
 - [ ] Logowanie przez Google — niezaimplementowane w mobilce
 - [ ] Logowanie przez Facebook — niezaimplementowane w mobilce
 
-Autor backendu zaimplementował dedykowany endpoint `POST /auth/oauth2/google/token` umożliwiający wymianę Google ID token na JWT systemu (PR #40), co w teorii pozwala na zaimplementowanie pełnego flow OAuth2 Google po stronie aplikacji mobilnej z użyciem `expo-auth-session` i Chrome Custom Tabs. Do uruchomienia po stronie klienta konieczna byłaby jednak dodatkowa konfiguracja Google Cloud Console projektu OAuth2 (dodanie redirect URI dla aplikacji Expo / EAS Build), co wymaga akcji ze strony właściciela projektu Google Cloud. Ze względu na priorytety czasowe oraz niezawarcie OAuth2 w pierwotnej liście funkcjonalności projektu, funkcjonalność została odłożona poza zakres bieżącej iteracji.
-
-Logowanie przez Facebook — backend wspiera, ale aplikacja OAuth zarejestrowana w Facebook Developer Console jest aktualnie w stanie nieaktywnym i nie zostanie aktywowana w ramach projektu, w związku z czym funkcjonalność została wycofana z aplikacji mobilnej.
