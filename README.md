@@ -18,10 +18,28 @@ Aplikacja jest częścią większego projektu składającego się z:
 - Tryb offline — cache danych i kolejka synchronizacji wydatków
 - Ekran powitalny dla niezalogowanych użytkowników
 
-## Wymagania
+## Instalacja aplikacji (Android)
+
+Gotową aplikację można pobrać i zainstalować na urządzeniu z systemem Android jako plik APK.
+
+<img src="docs/qr-install.png" alt="Kod QR — pobierz aplikację" width="220">
+
+Zeskanuj kod QR telefonem lub wejdź pod adres:
+[github.com/Rafal-wq/expense-splitter-mobile/releases/latest](https://github.com/Rafal-wq/expense-splitter-mobile/releases/latest)
+
+Następnie:
+
+1. Na stronie wydania pobierz plik `.apk` z sekcji **Assets**.
+2. Otwórz pobrany plik na telefonie.
+3. Android poprosi o zgodę na instalację z nieznanych źródeł — zezwól aplikacji (np. przeglądarce), z której pobierasz plik.
+4. Po zakończeniu instalacji aplikacja **Expense Splitter** pojawi się na ekranie głównym.
+
+Aplikacja wymaga systemu Android w wersji 7.0 lub nowszej.
+
+## Wymagania (tryb deweloperski)
 
 - Node.js 20+
-- Expo Go (na urządzeniu z systemem Android lub iOS) — do uruchomienia w trybie deweloperskim
+- Expo Go (na urządzeniu z systemem Android lub iOS)
 
 ## Uruchomienie aplikacji (tryb deweloperski)
 
