@@ -129,6 +129,14 @@ Projekt zawiera testy jednostkowe uruchamiane poleceniem `npm test`.
 Testami pokryto kluczową logikę biznesową (ustalanie statusu rozliczenia wydatku),
 serwisy komunikacji z API (auth, expenses) oraz store powiadomień.
 
+Łącznie 59 testów w 4 plikach (`__tests__/`):
+- `utils/expenseSettled.test.ts` — logika obliczania statusu rozliczenia wydatku
+- `services/auth.service.test.ts` — uwierzytelnianie, w tym `verify2FA` na surowym axios
+- `services/expenses.service.test.ts` — operacje na wydatkach
+- `store/notifications.store.test.ts` — globalny stan powiadomień
+
+Pełny opis strategii testów, mockowania oraz instrukcja dodawania nowych testów: [docs/TESTING.md](docs/TESTING.md).
+
 ## Lista funkcjonalności
 
 ### Etap 1 — Uwierzytelnianie

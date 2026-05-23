@@ -68,11 +68,13 @@ Zeskanuj wyświetlony kod QR aplikacją Expo Go na telefonie. Telefon i komputer
 
 ## Uruchamianie testów
 
-Projekt zawiera testy jednostkowe (Jest + React Native Testing Library):
+Projekt zawiera testy jednostkowe (Jest + React Native Testing Library) — 59 testów w 4 plikach pokrywających kluczową logikę biznesową, serwisy komunikacji z API oraz globalny stan aplikacji.
 
 ```bash
 npm test
 ```
+
+Szczegółowy opis strategii testów (co jest pokryte, jak działa mockowanie, jak dodawać nowe testy): [docs/TESTING.md](docs/TESTING.md).
 
 ## Uruchomienie backendu lokalnie (opcjonalne)
 
